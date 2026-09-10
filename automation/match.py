@@ -52,6 +52,11 @@ def validate_adaptation(profile, job, adapted):
             raise ValueError('Unknown match evidence.')
         if match['status'] in ('direct', 'transferable') and not match['evidence_ids']:
             raise ValueError('Positive match without evidence.')
+        if match['status'] == 'direct' and re.search(
+                r'not (?:evidenced|documented|explicit|fully)|no (?:evidence|explicit evidence)|'
+                r'not supported|sin evidencia|no (?:acreditad|documentad)|no se (?:acredita|documenta)|'
+                r'parcial|partially', match['rationale'], re.I):
+            raise ValueError('A direct match rationale admits missing or partial evidence; use transferable/unconfirmed.')
     claims = [adapted['headline'], adapted['summary'], *adapted['skills']]
     for role, master in zip(adapted['experience'], profile['experience']):
         if not 1 <= len(role['bullets']) <= 4:

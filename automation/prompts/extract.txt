@@ -7,6 +7,8 @@ ML/NN, travel, SCADA, probabilistic methods) remain visible. Use stable IDs r01,
 Also include the capabilities needed for the stated responsibilities in requirements
 with priority unspecified, so that SCADA, uncertainty analysis and documentation get
 their own evidence match. Paraphrase responsibilities and requirement text concisely.
+Use ONE capability per requirement: certification, design updates and claims
+investigations must be three separate requirements, not one compound requirement.
 Preserve exact short source quotes for each requirement, copied from source_text.
 Use required/preferred only when supported by the wording; otherwise unspecified.
 Complementary training is not automatically preferred: use unspecified unless the

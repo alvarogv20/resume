@@ -92,6 +92,12 @@ class EvidenceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate_adaptation(p, j, a)
 
+    def test_direct_match_cannot_admit_missing_evidence(self):
+        p, j, a = fixture()
+        a['matches'][0]['rationale'] = 'Certification is evidenced; claims investigations are not evidenced.'
+        with self.assertRaises(ValueError):
+            validate_adaptation(p, j, a)
+
     def test_tex_injection_rejected(self):
         p, j, a = fixture()
         a['summary']['text'] = r'\input{contact.tex}'

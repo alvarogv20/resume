@@ -10,7 +10,6 @@ import subprocess
 import tempfile
 
 import yaml
-from jsonschema import ValidationError
 from .extract import canonical_url, fetch_job
 from .generate import ROOT, assert_no_contacts, load_contacts, render
 from .llm import LLM
@@ -47,6 +46,10 @@ def main(argv=None):
     if destination.exists():
         parser.error('That role directory exists. Use a new version suffix to preserve prior results.')
     contacts = load_contacts(args.contacts)
+    implementation = [*sorted((ROOT / 'automation').rglob('*.py')),
+                      *sorted((ROOT / 'automation/prompts').glob('*.txt')),
+                      ROOT / 'templates/tailored-cv.tex.j2', ROOT / 'layout.tex', ROOT / 'requirements.txt']
+    implementation_hashes = {p.relative_to(ROOT).as_posix(): digest(p.read_bytes()) for p in implementation}
     profile_bytes = (ROOT / 'profile' / 'profile.yaml').read_bytes()
     profile = yaml.safe_load(profile_bytes)
     # Reject accidental contact additions before any network/model call.
@@ -103,10 +106,13 @@ def main(argv=None):
                    'generated_at': datetime.now(timezone.utc).isoformat(),
                    'profile_version': profile['version'], 'profile_sha256': digest(profile_bytes),
                    'source_sha256': digest(source.encode()), 'code_commit': commit,
+                   'implementation_sha256': implementation_hashes,
                    'prompt_sha256': {p.name: digest(p.read_bytes()) for p in sorted((ROOT / 'automation/prompts').glob('*.txt'))},
                    'llm_calls': llm.calls, 'audit': audit, 'master_unchanged': True})
     if (ROOT / 'profile/profile.yaml').read_bytes() != profile_bytes:
         raise ValueError('Master changed during execution; rerun against a stable revision.')
+    if any(digest((ROOT / p).read_bytes()) != h for p, h in implementation_hashes.items()):
+        raise ValueError('Implementation changed during execution; rerun against a stable revision.')
     requirements = {r['id']: r for r in job['requirements']}
     analysis = ['# Cruce con el perfil', '', 'Cada coincidencia remite a hechos del perfil maestro.', '']
     for match in adapted['matches']:
