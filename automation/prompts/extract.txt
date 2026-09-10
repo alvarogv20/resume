@@ -9,6 +9,14 @@ with priority unspecified, so that SCADA, uncertainty analysis and documentation
 their own evidence match. Paraphrase responsibilities and requirement text concisely.
 Use ONE capability per requirement: certification, design updates and claims
 investigations must be three separate requirements, not one compound requirement.
+EXCEPTION: preserve explicit alternatives as ONE requirement. Never turn 'Mechanical
+Engineering, Aerospace Engineering, Physics, or similar' into separate degree requirements.
+Likewise keep '+8 years in loads, control, aeroelastic simulation, site suitability or
+data analytics' as ONE experience requirement, and 'Spanish/German nice to have' as
+ONE alternative-language requirement. Preserve qualifiers (any lifecycle stage, service,
+foreign qualifications only) instead of dropping them. Source logic outranks atomization.
+When correction_required or corrections_required is supplied, use that validator
+feedback to repair the previous extraction, checking against source_text.
 Preserve exact short source quotes for each requirement, copied from source_text.
 Use required/preferred only when supported by the wording; otherwise unspecified.
 Complementary training is not automatically preferred: use unspecified unless the

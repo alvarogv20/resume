@@ -6,6 +6,9 @@ Check every direct match: flag it if an explicit requirement is only partially m
 especially minimum years, tool lists, ML/NN, SCADA and probabilistic methods. Do not
 require the candidate to meet all job requirements: correctly disclosed gaps are fine.
 Check source_quotes support the extracted requirement and mandatory/preferred label.
+Compare the job to source_text: reject loss of qualifiers and, especially, conversion
+of explicit alternatives (degree fields, experience fields, Spanish/German) into separate
+mandatory requirements. Distinguish practical tool use from evidence of formal training.
 Do not demand facts omitted for brevity. Accept faithful translations and paraphrases.
 Report concrete problems only. Never certify the profile's real-world truth: assess
 consistency with supplied evidence. If problems exist set supported=false with issues.

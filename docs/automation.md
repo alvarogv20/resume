@@ -5,8 +5,9 @@
 URL de oferta → extracción → requisitos estructurados → cruce con el maestro →
 redacción → auditoría de evidencias → PDF local → rama y PR opcional.
 
-Usa `codex exec` con la sesión local de ChatGPT, modelo `gpt-5.6-luna` y razonamiento
-bajo. Hace tres llamadas normalmente y hasta seis si necesita corregir extracción y borrador.
+Usa `codex exec` con la sesión local de ChatGPT, modelo ligero `gpt-5.6-luna` y
+razonamiento medio para preservar matices de la oferta. Hace tres llamadas normalmente
+y hasta siete si necesita corregir extracción y borrador.
 Consume los límites de tu cuenta Codex; la disponibilidad del modelo depende de la
 cuenta. `--model` permite cambiarlo sin tocar el código. La integración no necesita
 copiar tu sesión a GitHub ni almacenar una clave API. Las solicitudes de Codex se
@@ -36,6 +37,11 @@ Edita `.private/contact.json` con tu correo, teléfono y perfil LinkedIn. En est
 instalación ya se ha configurado con el correo/teléfono locales y el LinkedIn
 facilitado por el propietario. Los tres campos son obligatorios; la generación
 se detiene si faltan. No los escribas en YAML, un issue, una PR o un parámetro de Actions.
+
+Atajo: `./tailor.ps1 "URL"` usa el entorno `.venv`, Codex local y un identificador
+automático con fecha; sólo tienes que proporcionar el enlace. Acepta también
+`-Language es` y `-Slug empresa-puesto-id`. En esta instalación se ha preparado
+el entorno y una copia de Tectonic dentro de `.venv/Scripts`.
 
 ```powershell
 python -m automation.run --url "https://www.linkedin.com/jobs/view/4441905971/" --slug nordex-4441905971 --language en

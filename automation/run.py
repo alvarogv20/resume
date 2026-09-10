@@ -82,16 +82,21 @@ def main(argv=None):
     try:
         validate_adaptation(profile, job, adapted)
         print('LLM: verify factual support...', flush=True)
-        audit = llm.request('audit', {'master_profile': model_profile, 'job': job, 'adaptation': adapted}, AUDIT)
+        audit = llm.request('audit', {'master_profile': model_profile, 'source_text': source,
+                                     'job': job, 'adaptation': adapted}, AUDIT)
     except ValueError as error:
         audit = {'supported': False, 'issues': [str(error)]}
     if not audit['supported'] or audit['issues']:
         # One bounded correction, not an open-ended agent loop.
+        job = llm.request('extract', {'source_text': source, 'previous_extraction': job,
+                                     'corrections_required': audit['issues']}, JOB)
+        validate_job(job, source)
         adapted = llm.request('adapt', {'master_profile': model_profile, 'job': job,
                                       'requested_language': args.language, 'previous_draft': adapted,
                                       'corrections_required': audit['issues']}, ADAPTATION)
         validate_adaptation(profile, job, adapted)
-        audit = llm.request('audit', {'master_profile': model_profile, 'job': job, 'adaptation': adapted}, AUDIT)
+        audit = llm.request('audit', {'master_profile': model_profile, 'source_text': source,
+                                     'job': job, 'adaptation': adapted}, AUDIT)
         if not audit['supported'] or audit['issues']:
             raise ValueError('Evidence audit failed after correction; no result was published.')
     tex = render(profile, adapted, args.language)

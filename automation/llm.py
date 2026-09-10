@@ -40,7 +40,7 @@ class LLM:
             command = [os.environ.get('CODEX_BIN', 'codex'), 'exec', '--ignore-user-config',
                        '--ephemeral', '--skip-git-repo-check', '--sandbox', 'read-only',
                        '-c', 'features.shell_tool=false', '-c', 'web_search="disabled"',
-                       '-c', 'project_doc_max_bytes=0', '-c', 'model_reasoning_effort="low"',
+                       '-c', 'project_doc_max_bytes=0', '-c', 'model_reasoning_effort="medium"',
                        '--model', self.model, '--output-schema', str(path / 'schema.json'),
                        '--output-last-message', str(path / 'result.json'), '-']
             env = {k: v for k, v in os.environ.items()

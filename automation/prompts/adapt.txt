@@ -6,6 +6,9 @@ must explain the limitation; gap is a known mismatch; unconfirmed lacks evidence
 Never use gap for an experience merely marked unconfirmed in the master. Never mark
 a compound requirement direct when any part is unsupported. A rationale admitting
 missing evidence is incompatible with direct. Write ALL rationales in Spanish.
+Be conservative about direct: adjacent/implicit activities are transferable. Practical
+tool use supports a transferable match to formal training, not direct training evidence.
+When corrections_required is supplied, resolve ALL those validator issues explicitly.
 Never claim more experience than the dated profile supports. In particular leadership
 years cannot automatically be counted as hands-on years. Do not add SCADA, ML, NN,
 probabilistic methods, tools, travel availability, certifications or metrics unless
