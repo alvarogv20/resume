@@ -15,6 +15,7 @@ from .generate import ROOT, assert_no_contacts, load_contacts, render
 from .llm import LLM
 from .match import validate_adaptation, validate_job
 from .schemas import ADAPTATION, AUDIT, JOB
+from .repair import repair
 from .validate import compile_pdf
 
 
@@ -81,23 +82,21 @@ def main(argv=None):
                                   'requested_language': args.language}, ADAPTATION)
     try:
         validate_adaptation(profile, job, adapted)
-        print('LLM: verify factual support...', flush=True)
-        audit = llm.request('audit', {'master_profile': model_profile, 'source_text': source,
-                                     'job': job, 'adaptation': adapted}, AUDIT)
     except ValueError as error:
-        audit = {'supported': False, 'issues': [str(error)]}
-    if not audit['supported'] or audit['issues']:
-        # One bounded correction, not an open-ended agent loop.
-        job = llm.request('extract', {'source_text': source, 'previous_extraction': job,
-                                     'corrections_required': audit['issues']}, JOB)
-        validate_job(job, source)
         adapted = llm.request('adapt', {'master_profile': model_profile, 'job': job,
                                       'requested_language': args.language, 'previous_draft': adapted,
-                                      'corrections_required': audit['issues']}, ADAPTATION)
+                                      'corrections_required': [str(error)]}, ADAPTATION)
         validate_adaptation(profile, job, adapted)
+    print('LLM: verify factual support...', flush=True)
+    audit = llm.request('audit', {'master_profile': model_profile, 'source_text': source,
+                                 'job': job, 'adaptation': adapted}, AUDIT)
+    repairs = None
+    if not audit['supported'] or any(audit[k] for k in ('issues', 'extraction_issues', 'unsupported_claims', 'match_corrections')):
+        repairs = audit
+        adapted = repair(profile, job, adapted, audit)
         audit = llm.request('audit', {'master_profile': model_profile, 'source_text': source,
                                      'job': job, 'adaptation': adapted}, AUDIT)
-        if not audit['supported'] or audit['issues']:
+        if not audit['supported'] or any(audit[k] for k in ('issues', 'extraction_issues', 'unsupported_claims', 'match_corrections')):
             raise ValueError('Evidence audit failed after correction; no result was published.')
     tex = render(profile, adapted, args.language)
     print('Compiling private PDF and checking text/layout...', flush=True)
@@ -113,7 +112,7 @@ def main(argv=None):
                    'source_sha256': digest(source.encode()), 'code_commit': commit,
                    'implementation_sha256': implementation_hashes,
                    'prompt_sha256': {p.name: digest(p.read_bytes()) for p in sorted((ROOT / 'automation/prompts').glob('*.txt'))},
-                   'llm_calls': llm.calls, 'audit': audit, 'master_unchanged': True})
+                   'llm_calls': llm.calls, 'audit': audit, 'repair_feedback': repairs, 'master_unchanged': True})
     if (ROOT / 'profile/profile.yaml').read_bytes() != profile_bytes:
         raise ValueError('Master changed during execution; rerun against a stable revision.')
     if any(digest((ROOT / p).read_bytes()) != h for p, h in implementation_hashes.items()):

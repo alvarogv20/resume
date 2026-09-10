@@ -9,6 +9,7 @@ from automation.extract import canonical_url, check_public_url, page_text
 from automation.generate import assert_no_contacts, contact_tex, load_contacts, render, tex_escape
 from automation.llm import LLM
 from automation.match import validate_adaptation, validate_job
+from automation.repair import repair
 
 
 CONTACTS = {'email': 'private@example.org', 'phone': '+34 611 222 333',
@@ -98,6 +99,20 @@ class EvidenceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate_adaptation(p, j, a)
 
+    def test_audit_repairs_restore_literal_facts_and_downgrade(self):
+        p, j, a = fixture()
+        audit = {'extraction_issues': [], 'unsupported_claims': ['summary'],
+                 'match_corrections': [{'requirement_id': 'r01', 'status': 'transferable', 'rationale': 'Uso documentado, formación no confirmada.'}]}
+        fixed = repair(p, j, a, audit)
+        self.assertEqual(fixed['summary']['text'], 'Developed Python tools.')
+        self.assertEqual(fixed['matches'][0]['status'], 'transferable')
+        self.assertEqual(a['matches'][0]['status'], 'direct')
+
+    def test_bad_extraction_cannot_be_hidden_by_cv_repair(self):
+        p, j, a = fixture()
+        with self.assertRaises(ValueError):
+            repair(p, j, a, {'extraction_issues': ['Alternatives lost']})
+
     def test_tex_injection_rejected(self):
         p, j, a = fixture()
         a['summary']['text'] = r'\input{contact.tex}'
@@ -131,7 +146,7 @@ class PrivacyTests(unittest.TestCase):
             self.assertIn('features.shell_tool=false', command)
             self.assertNotEqual(Path(kwargs['cwd']).resolve(), Path.cwd())
             output = Path(command[command.index('--output-last-message') + 1])
-            output.write_text('{"supported":true,"issues":[]}', encoding='utf-8')
+            output.write_text('{"supported":true,"issues":[],"extraction_issues":[],"unsupported_claims":[],"match_corrections":[]}', encoding='utf-8')
             return type('Result', (), {'returncode': 0})()
         with patch.dict('os.environ', {'CV_CONTACT_JSON': json.dumps(CONTACTS), 'GH_TOKEN': 'test-secret'}):
             with patch('subprocess.run', side_effect=fake_run):

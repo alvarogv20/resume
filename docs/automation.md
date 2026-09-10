@@ -7,7 +7,7 @@ redacción → auditoría de evidencias → PDF local → rama y PR opcional.
 
 Usa `codex exec` con la sesión local de ChatGPT, modelo ligero `gpt-5.6-luna` y
 razonamiento medio para preservar matices de la oferta. Hace tres llamadas normalmente
-y hasta siete si necesita corregir extracción y borrador.
+y hasta seis si necesita corregir extracción, formato y contenido.
 Consume los límites de tu cuenta Codex; la disponibilidad del modelo depende de la
 cuenta. `--model` permite cambiarlo sin tocar el código. La integración no necesita
 copiar tu sesión a GitHub ni almacenar una clave API. Las solicitudes de Codex se
@@ -72,6 +72,9 @@ de evidencias, cifras, ausencia de contactos en resultados publicables, compilac
 texto extraíble, contactos en el PDF y máximo de dos páginas. `--max-pages 1` exige
 una página. La auditoría semántica también la realiza un LLM y puede equivocarse;
 la revisión visual y editorial sigue pendiente hasta que una persona la compruebe.
+Cuando el auditor detecta una afirmación excesiva, el programa la sustituye por un
+hecho literal de la evidencia citada, rebaja las coincidencias indicadas y vuelve a
+auditar. Se conserva el feedback original en `repair_feedback`; no se oculta la corrección.
 No se calcula una probabilidad de contratación ni se envía una candidatura.
 
 Abre el PDF, revisa su distribución y contrástalo con `match.md`. Para registrar una
@@ -128,6 +131,12 @@ o ejecución de ramas ajenas a ese runner. Dado que el fork es público, cualqui
 colaborador al que concedas capacidad de modificar la rama predeterminada también
 debe ser alguien a quien confíes la ejecución de código en ese ordenador. No uses
 esa instalación como runner genérico para otros workflows o repositorios.
+La condición del propietario protege este workflow, pero no a todos los workflows
+posibles del repositorio: otra definición podría solicitar la misma etiqueta de runner.
+Mientras esté conectado, no apruebes ejecuciones de PRs externos que puedan acceder
+al runner y revisa los cambios de workflows antes de integrarlos. Para colaboración
+abierta con código no confiable, usa únicamente el comando local y los checks alojados
+en GitHub, o aloja la generación en un repositorio de automatización privado separado.
 
 No se han registrado runners ni configurado secretos automáticamente: esos cambios
 requieren acceso administrativo de GitHub y a la instalación del runner. El conector
