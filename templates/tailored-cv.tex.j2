@@ -1,0 +1,28 @@
+% Generated from evidence-linked profile facts. Contacts are injected only at build time.
+\input{layout.tex}
+\hypersetup{pdftitle={((= profile.name|tex =)) - Engineering CV},pdfauthor={((= profile.name|tex =))}}
+\begin{document}
+\cvheader{((= adapted.headline.text|tex =))}
+\small
+\section{((= labels[0]|tex =))}
+((= adapted.summary.text|tex =))
+\section{((= labels[1]|tex =))}
+((* for master, role in roles *))
+\role{((= master.title|tex =))}{((= master.company|tex =)) | ((= master.location|tex =))}{((= master.dates|tex =))}
+\begin{itemize}
+((* for bullet in role.bullets *))
+\item ((= bullet.text|tex =))
+((* endfor *))
+\end{itemize}
+((* endfor *))
+\section{((= labels[2]|tex =))}
+((* for skill in adapted.skills *))
+((= skill.text|tex =))\par
+((* endfor *))
+\section{((= labels[3]|tex =))}
+((* for education in profile.education *))
+((= education.text|tex =))\par
+((* endfor *))
+\section{((= labels[4]|tex =))}
+((* for language in profile.languages *))((= language.text|tex =))((* if not loop.last *)) | ((* endif *))((* endfor *))
+\end{document}

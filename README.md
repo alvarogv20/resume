@@ -25,8 +25,28 @@ Copy `contact.example.tex` to `contact.tex` and replace its placeholders for a c
 
 ## Another position
 
+### Automated workflow
+
+The editable source of truth is now `profile/profile.yaml`. See
+[the automation guide](docs/automation.md) for local Codex generation, private
+contacts, evidence validation and the optional private GitHub Actions runner.
+
+```sh
+python -m pip install -r requirements.txt
+python -m automation.run --url "https://www.linkedin.com/jobs/view/JOB_ID/" --slug company-job-id --language en
+```
+
+Configure `.private/contact.json` from `contact.example.json` first. Final PDFs
+include email, phone and LinkedIn but stay in the ignored `build/` directory.
+Public results contain only contact-free LaTeX and the evidence analysis. The
+pipeline never updates the master profile or submits applications automatically.
+
+### Manual workflow
+
 Copy `base.tex` to a role-specific file, record the job link and evidence in `roles/`, then reorder and rewrite supported experience. Preserve dates, titles and achievements. Do not invent certifications, durations or skills.
 
 Compile, inspect page layout and extract PDF text before submission. Readable text does not guarantee ATS selection. Follow the employer's requested file type.
 
-Source CV last updated March 2026. Confirm current employment and contacts before applying. This repository prepares documents; it does not submit applications.
+The owner accepted the existing profile as the editable master in September 2026.
+Record future revisions in `profile/evidence.md`. This repository prepares documents;
+it does not submit applications.
