@@ -1,0 +1,7 @@
+contact.tex
+build/
+*.aux
+*.log
+*.out
+*.xdv
+*.synctex.gz

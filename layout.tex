@@ -1,0 +1,20 @@
+% Adapted from Jake Gutierrez's MIT-licensed resume (see LICENSE).
+% Single-column A4 variant. XeLaTeX/Tectonic embeds Unicode fonts.
+\documentclass[a4paper,11pt]{article}
+\usepackage[margin=1.5cm,top=1.1cm,bottom=1.1cm]{geometry}
+\usepackage{fontspec}
+\setmainfont{texgyretermes}[Extension=.otf,UprightFont=*-regular,BoldFont=*-bold,ItalicFont=*-italic,BoldItalicFont=*-bolditalic,RawFeature=-kern]
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3pt}
+\raggedright
+\titleformat{\section}{\large\scshape}{}{0em}{}[\titlerule]
+\titlespacing*{\section}{0pt}{9pt}{5pt}
+\setlist[itemize]{leftmargin=13pt,itemsep=2pt,topsep=3pt,parsep=0pt}
+\newcommand{\role}[3]{\textbf{#1}\\#2\\\textit{#3}\par}
+\newcommand{\cvcontact}{Madrid, Spain}
+\InputIfFileExists{contact.tex}{}{}
+\newcommand{\cvheader}[1]{\begin{center}{\Huge\scshape Álvaro Garrido}\\[3pt]#1\\[3pt]\small\cvcontact\end{center}}
