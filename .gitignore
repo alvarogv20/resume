@@ -5,3 +5,9 @@ build/
 *.out
 *.xdv
 *.synctex.gz
+.private/
+.venv/
+__pycache__/
+.env
+.env.*
+!contact.example.json

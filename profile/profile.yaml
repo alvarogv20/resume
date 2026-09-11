@@ -1,0 +1,71 @@
+version: 1
+reviewed_on: '2026-09-10'
+source: base.tex at 97e5059
+review_note: Current profile accepted as master by owner; editable through reviewed commits.
+name: Álvaro Garrido
+location: Madrid, Spain
+headline: Aeronautical Engineer | Aeroelasticity & Loads
+experience:
+  - id: solute-lead
+    title: Technical Area Responsible
+    company: Solute
+    location: Madrid, Spain
+    dates: January 2025 - Present
+    facts:
+      - id: lead-team
+        text: Manage a 10-member Aeroelasticity & Controls team, organizing workloads and supervising R&D objectives.
+      - id: lead-customers
+        text: Coordinate customer communications and support commercial requirements.
+      - id: lead-proposals
+        text: Prepare technical and commercial proposals for business development and client portfolio diversification.
+  - id: solute-pm
+    title: Senior Project Engineer & Project Manager
+    company: Solute
+    location: Madrid, Spain
+    dates: June 2023 - January 2025
+    facts:
+      - id: pm-uav
+        text: Led development of a rotating-wing UAV for wind turbine inspection, covering technical requirements, system architecture, certification processes and testing.
+      - id: pm-wind
+        text: Provided technical and functional coordination for wind turbine projects and engineering teams, including life extension and structural integrity.
+      - id: pm-certification
+        text: Managed load certification processes against IEC/DNV standards for international projects.
+  - id: solute-loads
+    title: Aeroelastic Loads Engineer
+    company: Solute
+    location: Madrid, Spain
+    dates: December 2021 - June 2023
+    facts:
+      - id: loads-python
+        text: Developed Python and MATLAB scripts to reduce load calculation cycle times and support wind turbine design optimization.
+      - id: loads-methods
+        text: Developed engineering methodologies for Dynamic Wake Meandering and floating wind turbine loads.
+      - id: loads-simulation
+        text: Performed aeroelastic simulations and dynamic load analyses for GE Renewables offshore turbines, covering bottom-fixed and floating configurations.
+      - id: loads-sites
+        text: Conducted site-specific assessments and control tuning for wind turbine projects.
+skills:
+  - id: skills-tools
+    text: Python, MATLAB, Git; engineering methodology development; simulation workflow optimization.
+  - id: skills-engineering
+    text: Aeroelasticity, structural dynamics, Bladed, HAWC2; CFD with Fluent; structural tools with NX; CAD with CATIA V5.
+  - id: skills-coordination
+    text: Team leadership, R&D supervision, customer coordination, technical requirements, system architecture, IEC/DNV load certification.
+  - id: skills-projects
+    text: MS Project, Jira, Smartsheet.
+education:
+  - id: edu-master
+    text: Master's Degree in Aeronautical Engineering | 2019 - 2021 | Universidad Politécnica de Madrid and University of Liège.
+  - id: edu-bachelor
+    text: Bachelor's Degree in Aerospace Engineering | 2015 - 2019 | Universidad Politécnica de Madrid | Average 7.97/10 | Top 5% distinction.
+  - id: edu-project
+    text: 'Final project: Carbon fiber recycling using 3D printing - Honors, 9.8/10.'
+languages:
+  - id: lang-es
+    text: 'Spanish: Native'
+  - id: lang-en
+    text: 'English: Advanced, professional working proficiency'
+unconfirmed:
+  - Availability to travel and relocate.
+  - Direct experience with SCADA data, probabilistic methods, Alaska, Flex5, ML or neural networks.
+  - Additional professional experience before December 2021.
