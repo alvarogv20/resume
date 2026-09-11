@@ -1,27 +1,17 @@
 # Automatización del CV
 
-## Qué hace
+Genera un CV específico a partir de una oferta y del perfil maestro, con evidencias
+trazables y PDF local. Codex es el proveedor predeterminado; OpenAI Responses y APIs
+compatibles con Chat Completions son opciones explícitas.
 
-URL de oferta → extracción → requisitos estructurados → cruce con el maestro →
-redacción → auditoría de evidencias → PDF local → rama y PR opcional.
+- [Flujo detallado y herramientas por etapa](workflow.md)
+- [Configuración de modelos y APIs](configuration.md)
+- [Reanudación, errores y pruebas](troubleshooting.md)
 
-Usa `codex exec` con la sesión local de ChatGPT, modelo ligero `gpt-5.6-luna` y
-razonamiento medio para preservar matices de la oferta. Hace tres llamadas normalmente
-y hasta seis si necesita corregir extracción, formato y contenido.
-Consume los límites de tu cuenta Codex; la disponibilidad del modelo depende de la
-cuenta. `--model` permite cambiarlo sin tocar el código. La integración no necesita
-copiar tu sesión a GitHub ni almacenar una clave API. Las solicitudes de Codex se
-procesan en el servicio: «local» significa que el proceso y los archivos están en tu
-ordenador, no que el modelo se ejecute offline.
+## Preparación local
 
-Hay un adaptador opcional `--provider openai --model gpt-5-mini` mediante Responses
-API y salida JSON Schema, con `store: false`. Requiere `OPENAI_API_KEY` y facturación
-API separada; no está activado por defecto ni es necesario para la opción elegida.
-
-## Primera configuración local (Windows / PowerShell)
-
-Instala Python 3.12+, Git, Codex CLI y Tectonic, disponibles en `PATH`. Abre la carpeta
-del fork y ejecuta:
+Necesitas Python 3.12+, Git, Tectonic y, si usas el proveedor predeterminado, Codex CLI.
+Desde la raíz del repositorio, en PowerShell:
 
 ```powershell
 python -m venv .venv
@@ -33,157 +23,112 @@ New-Item -ItemType Directory -Force .private
 Copy-Item contact.example.json .private/contact.json
 ```
 
-Edita `.private/contact.json` con tu correo, teléfono y perfil LinkedIn. En esta
-instalación ya se ha configurado con el correo/teléfono locales y el LinkedIn
-facilitado por el propietario. Los tres campos son obligatorios; la generación
-se detiene si faltan. No los escribas en YAML, un issue, una PR o un parámetro de Actions.
-
-Atajo: `./tailor.ps1 "URL"` usa el entorno `.venv`, Codex local y un identificador
-automático con fecha; sólo tienes que proporcionar el enlace. Acepta también
-`-Language es` y `-Slug empresa-puesto-id`. En esta instalación se ha preparado
-el entorno y una copia de Tectonic dentro de `.venv/Scripts`.
+Si ya tienes el archivo de contactos, consérvalo. Completa email, phone y linkedin.
+Los tres son obligatorios. No los incluyas en el perfil YAML, en parámetros de Actions
+ni en archivos que se publiquen. La variable CV_CONTACT_JSON tiene precedencia sobre
+el archivo de contactos.
 
 ```powershell
-python -m automation.run --url "https://www.linkedin.com/jobs/view/4441905971/" --slug nordex-4441905971 --language en
+./tailor.ps1 "URL_OFERTA" -Slug empresa-puesto -Language en
 ```
 
-Si ya existe ese resultado, usa un identificador nuevo, por ejemplo
-`nordex-4441905971-v2`. Nunca se sobrescriben versiones anteriores. Si Tectonic o
-Codex no están en PATH, configura `TECTONIC_BIN`/`CODEX_BIN` con la ruta al ejecutable
-(o usa `--tectonic`). El perfil se valida antes de llamar al modelo; la compilación
-se ejecuta en un directorio temporal con modo no confiable de Tectonic.
-
-LinkedIn: basta con pasar el enlace largo de búsqueda que contiene `currentJobId`.
-Se transforma en una URL canónica sin identificadores de seguimiento. Se consulta
-la descripción pública de ese puesto, sin cookies ni acceso a tu cuenta LinkedIn.
-Si un portal bloquea la lectura, guarda la descripción como texto UTF-8 en
-`.private/oferta.txt` y añade `--job-text .private/oferta.txt`. Se registrará ese
-origen; no se fingirá una extracción web exitosa.
-
-## Resultados y revisión
-
-- `roles/<slug>/`: oferta estructurada, análisis, decisiones, LaTeX sin contactos,
-  salida del LLM con IDs de evidencia y validaciones con hashes de perfil/fuente/prompts.
-- `build/<slug>/cv.pdf`: documento completo con teléfono, email y enlace LinkedIn.
-- `.private/diagnostics/`: última salida de cada etapa para depurar fallos, fuera de Git.
-
-Se comprueban formato, requisitos cubiertos en el análisis, existencia y atribución
-de evidencias, cifras, ausencia de contactos en resultados publicables, compilación,
-texto extraíble, contactos en el PDF y máximo de dos páginas. `--max-pages 1` exige
-una página. La auditoría semántica también la realiza un LLM y puede equivocarse;
-la revisión visual y editorial sigue pendiente hasta que una persona la compruebe.
-Cuando el auditor detecta una afirmación excesiva, el programa la sustituye por un
-hecho literal de la evidencia citada, rebaja las coincidencias indicadas y vuelve a
-auditar. Se conserva el feedback original en `repair_feedback`; no se oculta la corrección.
-No se calcula una probabilidad de contratación ni se envía una candidatura.
-
-Abre el PDF, revisa su distribución y contrástalo con `match.md`. Para registrar una
-revisión visual realizada, cambia `visual_review` en `validation.json` y documenta
-quién la hizo. No marques como revisado un PDF que no hayas abierto.
-
-## Modificar el perfil maestro
-
-Edita `profile/profile.yaml`. Actualiza `version`, `reviewed_on` y el historial de
-`profile/evidence.md`. Los hechos mantienen IDs estables y los resultados conservan
-el SHA256 de la versión utilizada. El proceso no modifica el maestro ni aprende
-hechos de sus propias adaptaciones. `base.tex` queda como referencia inicial; para
-las nuevas adaptaciones manda el YAML. Los títulos, empresas, fechas, formación e
-idiomas se conservan literalmente; el selector de idioma adapta el resumen,
-competencias y bullets, sin traducir automáticamente las credenciales originales.
-
-## GitHub Actions usando tu sesión local
-
-`checks.yml` se ejecuta en runners efímeros de GitHub para probar código y evidencias.
-No utiliza contactos ni consume llamadas a Codex.
-
-`tailor-cv.yml` permite introducir URL, identificador e idioma en **Actions → Tailor
-CV (private local Codex) → Run workflow**. Necesita un runner Windows propio, encendido
-y conectado, porque la sesión de Codex y el PDF permanecen en tu ordenador.
-
-Configuración única, después de integrar esta PR en la rama predeterminada:
-
-1. En **Settings → Actions → Runners → New self-hosted runner**, sigue los comandos
-   oficiales de GitHub para Windows y añade la etiqueta `cv-private`. Usa una carpeta
-   dedicada al runner, distinta de tu checkout de trabajo. Ejecútalo como el mismo
-   usuario de Windows que hizo `codex login`; una cuenta de servicio distinta no
-   tendrá esa sesión. Instala las dependencias de `requirements.txt` en el Python
-   que utilice el runner y asegúrate de que `pwsh`, Git, Codex y Tectonic estén en PATH.
-2. Crea el environment `cv-private`, limita sus ramas de despliegue a la rama
-   predeterminada y añade como secreto `CV_CONTACT_JSON` el contenido del archivo
-   privado. Si utilizas GitHub CLI autenticado, este comando lee el archivo sin
-   poner su contenido en el historial:
-
-   ```powershell
-   Get-Content -Raw .private/contact.json | gh secret set CV_CONTACT_JSON --repo alvarogv20/resume --env cv-private
-   ```
-
-3. En **Settings → Actions → General → Workflow permissions**, permite crear PRs
-   desde Actions. El workflow pide `contents: write` y `pull-requests: write` para
-   publicar sólo los siete archivos permitidos del resultado.
-4. Ejecuta manualmente el workflow desde la rama predeterminada. El PDF final queda
-   en `%USERPROFILE%\CV-private\output\<slug>\cv.pdf` en el ordenador del runner,
-   además del directorio de compilación temporal del checkout. Una PR en borrador
-   enlaza la documentación pública; no se sube el PDF como artifact.
-
-El runner privado sólo recibe ejecuciones manuales del propietario, desde código
-de la rama predeterminada. No añadas eventos `pull_request`, `pull_request_target`
-o ejecución de ramas ajenas a ese runner. Dado que el fork es público, cualquier
-colaborador al que concedas capacidad de modificar la rama predeterminada también
-debe ser alguien a quien confíes la ejecución de código en ese ordenador. No uses
-esa instalación como runner genérico para otros workflows o repositorios.
-La condición del propietario protege este workflow, pero no a todos los workflows
-posibles del repositorio: otra definición podría solicitar la misma etiqueta de runner.
-Mientras esté conectado, no apruebes ejecuciones de PRs externos que puedan acceder
-al runner y revisa los cambios de workflows antes de integrarlos. Para colaboración
-abierta con código no confiable, usa únicamente el comando local y los checks alojados
-en GitHub, o aloja la generación en un repositorio de automatización privado separado.
-
-No se han registrado runners ni configurado secretos automáticamente: esos cambios
-requieren acceso administrativo de GitHub y a la instalación del runner. El conector
-empleado para el fork no expone la administración de runners/secrets. Hasta completar
-estos pasos, el comando local funciona y la ejecución privada de Actions no está activada.
-
-## Publicar un resultado desde el ordenador
-
-Revisa primero la documentación publicable. Configura autenticación Git para el
-fork y una credencial `GH_TOKEN` con permisos de contenido y PR; no reutilices la
-sesión de Codex como credencial GitHub. Establece `GITHUB_REPOSITORY=alvarogv20/resume`.
+Sin slug, PowerShell genera uno con fecha. Para recuperar una ejecución fallida debes
+indicar el slug original y añadir -Resume. El CLI Python conserva el comando anterior:
 
 ```powershell
-python -m automation.publish --slug nordex-4441905971 --base master
+python -m automation.run --url "URL_OFERTA" --slug empresa-puesto --language en
 ```
 
-El script crea la rama `codex/cv-<slug>`, confirma sólo el listado permitido y abre
-una PR en borrador. Si falla al crear la PR después de publicar la rama, la rama se
-conserva y puedes abrir la PR en GitHub sin volver a ejecutar la generación. No usa
-`git add .` ni añade PDFs. También puedes pedir a Codex que publique el resultado
-mediante el conector GitHub, tras inspeccionar los archivos.
+Si la web bloquea el contenido público, guarda texto UTF-8 en .private/oferta.txt y
+añade --job-text .private/oferta.txt (o -JobText en PowerShell). La fuente manual se
+registra como tal. LinkedIn se consulta por el identificador de oferta, sin cookies
+ni acceso a tu sesión personal.
 
-## Privacidad y límites
+## Validación y revisión
 
-Los contactos sólo se cargan para la comprobación de privacidad y compilación.
-No se pasan en el payload ni el entorno del subproceso LLM. Codex se ejecuta desde
-un directorio temporal sin el repo, sin configuración de plugins del usuario,
-sin instrucciones de proyecto y con shell y búsqueda desactivados. El modelo
-produce JSON; no puede suministrar LaTeX ejecutable al compilador. El renderer escapa
-todo texto. La compilación usa sólo la plantilla y el contacto generados por código.
+Antes de las llamadas se comprueban el perfil, IDs de evidencia, contactos,
+configuración y herramientas. La generación normal usa tres solicitudes lógicas;
+las correcciones limitadas pueden elevarlas hasta nueve, más los reintentos de
+transporte permitidos por el presupuesto.
 
-El perfil profesional es público en este fork. Los análisis de las candidaturas
-que publiques también lo serán. El PDF completo permanece local: no hay artifacts,
-releases ni GitHub Pages con contactos. El `.gitignore` no es cifrado ni control de
-acceso al ordenador; las comprobaciones previas a publicar complementan esa exclusión.
+La extracción conserva condiciones y distingue requisitos individuales, alternativas
+y exigencias conjuntas. Si la auditoría detecta un error semántico de extracción,
+permite una nueva secuencia extraer/adaptar/auditar. Las afirmaciones dudosas pueden
+sustituirse por hechos literales del maestro y volver a auditarse una vez. Si los
+problemas persisten, se detiene la generación.
 
-Los fallos de extracción, respuesta incompleta, evidencias inválidas, auditoría,
-compilación o privacidad detienen el proceso. Como máximo hay una corrección del
-borrador. Un enlace caducado o un requisito no cumplido no se sustituye por datos inventados.
+Se comprueban evidencias, atribución, cifras, longitud de texto, privacidad,
+compilación, páginas, texto extraíble, contactos y desbordamientos. El auditor LLM
+puede equivocarse: abre el PDF y contrástalo con match.md. validation.json mantiene
+visual_review=pending; sólo registra una revisión realizada por una persona.
+No se estima la probabilidad de contratación ni se envía una candidatura.
 
-## Comprobaciones
+## Archivos y privacidad
+
+- profile/profile.yaml es la fuente de hechos. Actualiza version, reviewed_on e
+  historial en profile/evidence.md al revisar el perfil. Nunca se modifica automáticamente.
+- roles/<slug>/ contiene siete archivos de revisión sin contactos.
+- build/<slug>/cv.pdf contiene el PDF completo local.
+- .private/runs/<slug>/ conserva la oferta, respuestas y diagnósticos para reanudar.
+  CV_RUNS_DIR permite trasladar este directorio privado fuera del checkout.
+
+Los títulos, empresas, fechas, formación e idiomas se conservan desde el maestro.
+El selector de idioma cambia resumen, competencias, bullets y etiquetas; no traduce
+automáticamente las credenciales originales.
+
+El texto completo de la oferta se guarda sólo en el checkpoint privado. Las claves
+API no se guardan en el TOML ni en los checkpoints. Codex recibe JSON desde un directorio
+temporal, sin el repositorio ni los contactos, con shell/búsqueda desactivados. Jinja2
+escapa el texto y Tectonic compila en modo no confiable.
+
+El perfil de este fork es público. Los análisis que publiques también lo serán.
+.gitignore no cifra archivos: protege los directorios privados con los controles del
+ordenador. El proceso no publica PDFs como artifacts, releases ni GitHub Pages.
+
+## Publicación opcional desde el ordenador
+
+La generación y la publicación son comandos separados. Revisa los siete archivos
+antes de publicar. Configura GITHUB_REPOSITORY=owner/repo, GH_TOKEN y autenticación
+Git para origin. Usa un checkout limpio cuyo HEAD coincida con la base remota:
 
 ```powershell
-python -m unittest discover -s tests -v
+python -m automation.publish --slug empresa-puesto --base master
 ```
 
-Fuentes técnicas:
-- [Codex no interactivo](https://learn.chatgpt.com/docs/non-interactive-mode)
-- [Salidas estructuradas](https://developers.openai.com/api/docs/guides/structured-outputs)
-- [GPT-5 mini para el adaptador API opcional](https://developers.openai.com/api/docs/models/gpt-5-mini)
+El script comprueba origin, ausencia de cambios rastreados, base remota actualizada,
+lista de archivos y diff completo antes del push. Crea codex/cv-<slug> y una PR en
+borrador. Si tu checkout incluye commits ajenos a la base, se detiene: copia los
+resultados a un checkout limpio de esa base.
+
+Si la API de PR falla después del push, la rama se conserva: abre la PR desde GitHub
+sin repetir la generación. Los datos de autenticación de Codex no son credenciales Git.
+
+## GitHub Actions en un repositorio privado
+
+checks.yml ejecuta pruebas en runners efímeros de GitHub sin modelos ni contactos.
+tailor-cv.yml tiene una condición explícita que impide su ejecución en repositorios
+públicos. Para automatizar remotamente, lleva el código revisado a un repositorio de
+automatización privado. El fork público sigue permitiendo la generación local.
+
+En el repositorio privado:
+
+1. Instala un runner Windows dedicado con etiqueta cv-private y las herramientas.
+   Para Codex, ejecútalo con el usuario que realizó codex login.
+2. Crea el environment cv-private, limitado a la rama predeterminada, con CV_CONTACT_JSON.
+   Para OpenAI añade OPENAI_API_KEY; para compatible añade LLM_API_KEY.
+3. Habilita la creación de PRs por Actions y revisa config/default.toml.
+4. Ejecuta manualmente con URL, slug, idioma y, si quieres, proveedor/modelo/base_url.
+   configured respeta la configuración común; sin personalización usa Codex.
+5. El PDF queda en %USERPROFILE%/CV-private/output/<slug>/cv.pdf y los checkpoints
+   en %USERPROFILE%/CV-private/runs/<slug>. Resume reutiliza estos checkpoints.
+
+El workflow sólo admite al propietario, desde la rama predeterminada, en el repositorio
+privado. No actives eventos de PR ni código ajeno en ese runner. Publica automáticamente
+una PR borrador después de generar; la revisión visual sigue pendiente.
+
+No se crean repositorios, runners ni secretos al modificar estos archivos. La definición
+está preparada para configurarse en el repositorio privado; no cambia la visibilidad
+ni la infraestructura del fork existente.
+
+Fuentes: [Codex no interactivo](https://learn.chatgpt.com/docs/non-interactive-mode),
+[salidas estructuradas](https://developers.openai.com/api/docs/guides/structured-outputs).

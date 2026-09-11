@@ -12,7 +12,9 @@ STRINGS = array(S)
 CLAIM = obj({'text': S, 'evidence_ids': STRINGS})
 JOB = obj({'title': S, 'company': S, 'location': S, 'language': S,
            'conditions': STRINGS, 'responsibilities': STRINGS,
-           'requirements': array(obj({'id': S, 'text': S,
+           'requirements': array(obj({'id': S, 'text': S, 'condition': S,
+                                     'logic': {'type': 'string', 'enum': ['single', 'any', 'all']},
+                                     'options': STRINGS,
                                      'priority': {'type': 'string', 'enum': ['required', 'preferred', 'unspecified']},
                                      'source_quote': S}))})
 ADAPTATION = obj({

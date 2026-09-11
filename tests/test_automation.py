@@ -25,7 +25,8 @@ def fixture():
         'skills': [], 'education': [], 'languages': []}
     job = {'title': 'Engineer', 'company': 'Employer', 'location': '', 'language': 'en',
            'conditions': [], 'responsibilities': [], 'requirements': [
-               {'id': 'r01', 'text': 'Python', 'priority': 'required', 'source_quote': 'Python'}]}
+               {'id': 'r01', 'text': 'Python', 'condition': '', 'logic': 'single', 'options': [],
+                'priority': 'required', 'source_quote': 'Python'}]}
     claim = {'text': 'Python tools developer', 'evidence_ids': ['fact-a']}
     adapted = {'matches': [{'requirement_id': 'r01', 'status': 'direct', 'evidence_ids': ['fact-a'], 'rationale': 'Explicit'}],
                'headline': copy.deepcopy(claim), 'summary': copy.deepcopy(claim), 'skills': [copy.deepcopy(claim)],

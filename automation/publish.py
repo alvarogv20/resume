@@ -24,6 +24,9 @@ def main():
     args = parser.parse_args()
     if not re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*', args.slug):
         parser.error('Invalid slug.')
+    if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._/-]*', args.base):
+        parser.error('Invalid base branch.')
+    git('check-ref-format', 'refs/heads/' + args.base)
     repo = os.environ.get('GITHUB_REPOSITORY', '')
     token = os.environ.get('GH_TOKEN') or os.environ.get('GITHUB_TOKEN')
     if not token or not re.fullmatch(r'[\w.-]+/[\w.-]+', repo):
@@ -33,6 +36,12 @@ def main():
     remote = git('remote', 'get-url', 'origin')
     if remote.removesuffix('.git') not in ('https://github.com/' + repo, 'git@github.com:' + repo):
         parser.error('origin does not match the target repository.')
+    if git('diff', '--name-only'):
+        parser.error('Tracked local changes exist. Publish from a clean checkout of the base branch.')
+    git('fetch', 'origin', 'refs/heads/' + args.base)
+    base_commit = git('rev-parse', 'FETCH_HEAD')
+    if git('rev-parse', 'HEAD') != base_commit:
+        parser.error('HEAD must equal the fetched base. Use a clean checkout to avoid unrelated commits.')
     contacts = load_contacts(args.contacts)
     paths = ['roles/' + args.slug + '/' + file for file in FILES]
     for path in paths:
@@ -46,6 +55,8 @@ def main():
     if sorted(git('diff', '--cached', '--name-only').splitlines()) != sorted(paths):
         raise RuntimeError('Staged files differ from the publication allowlist.')
     git('commit', '-m', 'Add evidence-based CV adaptation: ' + args.slug)
+    if sorted(git('diff', '--name-only', base_commit + '...HEAD').splitlines()) != sorted(paths):
+        raise RuntimeError('Full PR diff differs from the publication allowlist; branch was not pushed.')
     git('push', '-u', 'origin', branch)
     body = {'title': 'CV adaptation: ' + args.slug, 'head': branch, 'base': args.base, 'draft': True,
             'body': 'Adds the extracted job requirements, evidence match and tailored LaTeX CV. '

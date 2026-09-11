@@ -29,7 +29,15 @@ Copy `contact.example.tex` to `contact.tex` and replace its placeholders for a c
 
 The editable source of truth is now `profile/profile.yaml`. See
 [the automation guide](docs/automation.md) for local Codex generation, private
-contacts, evidence validation and the optional private GitHub Actions runner.
+contacts, evidence validation and optional Actions in a private automation repository.
+
+- [Workflow and tools](docs/workflow.md)
+- [Provider configuration and API examples](docs/configuration.md)
+- [Resume and troubleshooting](docs/troubleshooting.md)
+
+Codex is the default. OpenAI Responses and explicitly configured Chat Completions
+compatible APIs share the same evidence checks. PowerShell and Actions accept provider
+and model overrides; there is no automatic provider fallback.
 
 ```sh
 python -m pip install -r requirements.txt
