@@ -46,7 +46,8 @@ Normalmente se necesitan tres solicitudes: extraer, adaptar y auditar. Una extra
 con citas inválidas permite una corrección. Un borrador inválido permite otra.
 Si la auditoría detecta errores semánticos de extracción, se repite una vez la secuencia
 extraer/adaptar/auditar. Las afirmaciones dudosas pueden sustituirse por una evidencia
-literal y auditarse una vez más. Máximo: nueve solicitudes lógicas antes de reintentos
+literal y auditarse hasta tres veces más. La extracción aprobada permanece fija en
+esas rondas, que sólo auditan el CV y sus coincidencias. Máximo: once solicitudes lógicas antes de reintentos
 de transporte, sujetas al presupuesto global de solicitudes.
 
 `single` representa un requisito individual; `any`, alternativas explícitas donde basta

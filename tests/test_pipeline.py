@@ -105,6 +105,33 @@ class PipelineTests(unittest.TestCase):
             report = json.loads((root / 'roles/test-role/validation.json').read_text())
             self.assertEqual(report['extraction_repair_feedback'], ['Lost qualifier'])
 
+    def test_repair_audits_use_accepted_job_without_reopening_extraction(self):
+        with tempfile.TemporaryDirectory() as folder, ExitStack() as stack:
+            root, args, settings, provider, _ = self.setup_run(folder, stack)
+            _, job, adapted = fixture()
+            first = {**AUDITED, 'supported': False, 'unsupported_claims': ['summary']}
+            second = {**AUDITED, 'supported': False, 'match_corrections': [
+                {'requirement_id': 'r01', 'status': 'transferable', 'rationale': 'Partial support'}]}
+            provider.request.side_effect = [Result(job), Result(adapted), Result(first), Result(second), Result(AUDITED)]
+            with patch('automation.pipeline.compile_pdf', side_effect=self.compile_ok):
+                pipeline.run(args, settings)
+            for call in provider.request.call_args_list[3:]:
+                self.assertEqual(call.args[1]['audit_scope'], 'adaptation')
+                self.assertNotIn('source_text', call.args[1])
+            report = json.loads((root / 'roles/test-role/validation.json').read_text())
+            self.assertEqual(len(report['repair_history']), 2)
+
+    def test_repeated_rejection_stops_without_pdf(self):
+        with tempfile.TemporaryDirectory() as folder, ExitStack() as stack:
+            root, args, settings, provider, _ = self.setup_run(folder, stack)
+            _, job, adapted = fixture()
+            rejected = {**AUDITED, 'supported': False, 'unsupported_claims': ['summary']}
+            provider.request.side_effect = [Result(job), Result(adapted)] + [Result(rejected)] * 4
+            with patch('automation.pipeline.compile_pdf') as compile, self.assertRaisesRegex(ValueError, 'bounded'):
+                pipeline.run(args, settings)
+            compile.assert_not_called()
+            self.assertFalse((root / 'roles/test-role').exists())
+
 
 class ValidationTests(unittest.TestCase):
     def test_master_profile_is_valid(self):

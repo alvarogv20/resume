@@ -2,11 +2,29 @@ import os
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
+from automation.executables import resolve_tool
 
 from automation.config import load_settings
 
 
 class ConfigurationTests(unittest.TestCase):
+    def test_tool_discovered_beside_python_when_path_is_missing(self):
+        with tempfile.TemporaryDirectory() as folder:
+            python = Path(folder) / 'python.exe'
+            tool = Path(folder) / ('tectonic.exe' if os.name == 'nt' else 'tectonic')
+            tool.touch()
+            with patch('automation.executables.sys.executable', str(python)), \
+                    patch.dict('os.environ', {}, clear=True), \
+                    patch('automation.executables.shutil.which', side_effect=[None, str(tool)]):
+                self.assertEqual(resolve_tool('tectonic'), str(tool.resolve()))
+
+    def test_invalid_explicit_tool_never_silently_falls_back(self):
+        with patch('automation.executables.shutil.which', return_value=None) as which:
+            with self.assertRaisesRegex(ValueError, 'executable missing'):
+                resolve_tool('tectonic', 'missing-tool')
+            self.assertEqual(which.call_count, 1)
+
     def test_default_and_provider_scoped_models(self):
         self.assertEqual(load_settings(environ={}).provider, 'codex')
         self.assertEqual(load_settings(environ={}).model, 'gpt-5.6-luna')

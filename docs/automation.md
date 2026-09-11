@@ -48,13 +48,14 @@ ni acceso a tu sesión personal.
 
 Antes de las llamadas se comprueban el perfil, IDs de evidencia, contactos,
 configuración y herramientas. La generación normal usa tres solicitudes lógicas;
-las correcciones limitadas pueden elevarlas hasta nueve, más los reintentos de
+las correcciones limitadas pueden elevarlas hasta once, más los reintentos de
 transporte permitidos por el presupuesto.
 
 La extracción conserva condiciones y distingue requisitos individuales, alternativas
 y exigencias conjuntas. Si la auditoría detecta un error semántico de extracción,
 permite una nueva secuencia extraer/adaptar/auditar. Las afirmaciones dudosas pueden
-sustituirse por hechos literales del maestro y volver a auditarse una vez. Si los
+sustituirse por hechos literales del maestro y volver a auditarse hasta tres veces.
+Estas rondas verifican el CV frente a la extracción ya aprobada. Si los
 problemas persisten, se detiene la generación.
 
 Se comprueban evidencias, atribución, cifras, longitud de texto, privacidad,

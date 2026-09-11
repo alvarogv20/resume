@@ -1,10 +1,9 @@
 """Validate master facts and local dependencies before network/model work."""
 from datetime import date
-import os
 import re
-import shutil
 
 from .match import fact_index
+from .executables import resolve_tool
 
 
 def validate_profile(profile):
@@ -47,5 +46,4 @@ def validate_profile(profile):
 
 
 def check_tools(tectonic=None):
-    if not shutil.which(tectonic or os.environ.get('TECTONIC_BIN', 'tectonic')):
-        raise ValueError('Tectonic executable missing; set TECTONIC_BIN or --tectonic.')
+    return resolve_tool('tectonic', tectonic)

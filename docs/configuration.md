@@ -87,5 +87,9 @@ parámetro API `max_output_tokens`. Los tokens no disponibles se omiten, no se e
 del checkout para sobrevivir a la limpieza de la siguiente ejecución. Las claves
 se obtienen sólo del entorno; no se imprimen ni forman parte de los checkpoints.
 
+Tectonic se busca en PATH y después junto al ejecutable Python del entorno virtual.
+Esto permite usar una instalación en `.venv/Scripts` incluso sin activar el entorno.
+Una ruta explícita mediante `--tectonic` o `TECTONIC_BIN` tiene precedencia y debe existir.
+
 Referencias: [Codex no interactivo](https://learn.chatgpt.com/docs/non-interactive-mode),
 [salidas estructuradas de OpenAI](https://developers.openai.com/api/docs/guides/structured-outputs).

@@ -7,10 +7,11 @@ import subprocess
 import tempfile
 from pypdf import PdfReader
 from .generate import ROOT, contact_tex
+from .executables import resolve_tool
 
 
 def compile_pdf(tex, destination, contacts, max_pages=2, tectonic=None):
-    executable = tectonic or os.environ.get('TECTONIC_BIN', 'tectonic')
+    executable = resolve_tool('tectonic', tectonic)
     with tempfile.TemporaryDirectory(prefix='cv-build-') as folder:
         work = Path(folder)
         shutil.copyfile(ROOT / 'layout.tex', work / 'layout.tex')

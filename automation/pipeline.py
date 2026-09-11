@@ -41,7 +41,7 @@ def run(args, settings):
     # Reject accidental contact additions before any network/model call.
     assert_no_contacts(profile_bytes.decode('utf-8'), contacts)
     validate_profile(profile)
-    check_tools(args.tectonic)
+    args.tectonic = check_tools(args.tectonic)
     url = canonical_url(args.url)
     supplied = args.job_text.read_text(encoding='utf-8-sig') if args.job_text else None
     if supplied is not None:
@@ -102,6 +102,7 @@ def _generate(args, state, llm, profile, profile_bytes, implementation_hashes, c
                                  'job': job, 'adaptation': adapted}, AUDIT)
     extraction_repairs = None
     if audit['extraction_issues']:
+        print('Correcting extraction and rebuilding the draft...', flush=True)
         extraction_repairs = audit['extraction_issues']
         job = llm.request('extract', {'source_text': source, 'previous_extraction': job,
                                      'corrections_required': extraction_repairs}, JOB)
@@ -109,16 +110,29 @@ def _generate(args, state, llm, profile, profile_bytes, implementation_hashes, c
         adapted = llm.request('adapt', {'master_profile': model_profile, 'job': job,
                                       'requested_language': args.language}, ADAPTATION)
         validate_adaptation(profile, job, adapted)
+        print('Auditing the corrected draft...', flush=True)
         audit = llm.request('audit', {'master_profile': model_profile, 'source_text': source,
                                      'job': job, 'adaptation': adapted}, AUDIT)
     repairs = None
-    if not audit['supported'] or any(audit[k] for k in ('issues', 'extraction_issues', 'unsupported_claims', 'match_corrections')):
-        repairs = audit
+    repair_history = []
+    # Extraction is audited before this loop. Keep that accepted input fixed while
+    # verifying conservative CV repairs, instead of reopening a different scope.
+    if audit['extraction_issues']:
+        raise ValueError('Semantic extraction audit failed after correction; review the source.')
+    for _ in range(3):
+        if audit['supported'] and not any(audit[k] for k in ('issues', 'unsupported_claims', 'match_corrections')):
+            break
+        if repairs is None:
+            repairs = audit
+        repair_history.append(audit)
+        print('Applying conservative evidence repairs and re-auditing...', flush=True)
         adapted = repair(profile, job, adapted, audit)
-        audit = llm.request('audit', {'master_profile': model_profile, 'source_text': source,
+        audit = llm.request('audit', {'audit_scope': 'adaptation', 'master_profile': model_profile,
                                      'job': job, 'adaptation': adapted}, AUDIT)
-        if not audit['supported'] or any(audit[k] for k in ('issues', 'extraction_issues', 'unsupported_claims', 'match_corrections')):
-            raise ValueError('Evidence audit failed after correction; no result was published.')
+        if audit['extraction_issues']:
+            raise ValueError('Auditor returned extraction findings outside the requested scope.')
+    if not audit['supported'] or any(audit[k] for k in ('issues', 'unsupported_claims', 'match_corrections')):
+        raise ValueError('Evidence audit failed after bounded corrections; no result was published.')
     tex = render(profile, adapted, args.language)
     print('Compiling private PDF and checking text/layout...', flush=True)
     pdf_path = ROOT / 'build' / args.slug / 'cv.pdf'
@@ -136,6 +150,7 @@ def _generate(args, state, llm, profile, profile_bytes, implementation_hashes, c
                    'prompt_sha256': {p.name: digest(p.read_bytes()) for p in sorted((ROOT / 'automation/prompts').glob('*.txt'))},
                    'llm_calls': llm.calls, 'llm_requests_total': state.manifest['requests'], 'audit': audit, 'repair_feedback': repairs,
                    'extraction_repair_feedback': extraction_repairs, 'master_unchanged': True})
+    report['repair_history'] = repair_history
     if (ROOT / 'profile/profile.yaml').read_bytes() != profile_bytes:
         raise ValueError('Master changed during execution; rerun against a stable revision.')
     if any(digest((ROOT / p).read_bytes()) != h for p, h in implementation_hashes.items()):
