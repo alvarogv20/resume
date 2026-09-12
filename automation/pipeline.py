@@ -115,6 +115,7 @@ def _generate(args, state, llm, profile, profile_bytes, implementation_hashes, c
                                      'job': job, 'adaptation': adapted}, AUDIT)
     repairs = None
     repair_history = []
+    repair_attempts = {}
     # Extraction is audited before this loop. Keep that accepted input fixed while
     # verifying conservative CV repairs, instead of reopening a different scope.
     if audit['extraction_issues']:
@@ -126,7 +127,7 @@ def _generate(args, state, llm, profile, profile_bytes, implementation_hashes, c
             repairs = audit
         repair_history.append(audit)
         print('Applying conservative evidence repairs and re-auditing...', flush=True)
-        adapted = repair(profile, job, adapted, audit)
+        adapted = repair(profile, job, adapted, audit, llm, repair_attempts, args.language)
         audit = llm.request('audit', {'audit_scope': 'adaptation', 'master_profile': model_profile,
                                      'job': job, 'adaptation': adapted}, AUDIT)
         if audit['extraction_issues']:

@@ -32,9 +32,16 @@ consistency with supplied evidence. If problems exist set supported=false with i
 Provide machine-actionable feedback: extraction_issues contains only errors in job
 extraction. match_corrections downgrades each overoptimistic match with its exact
 requirement_id, correct conservative status and Spanish rationale. unsupported_claims
-lists each unsupported CV claim using ONLY these paths: headline, summary, skill:N,
-bullet:ROLE_ID:N (N is a zero-based index). No free-form replacements: the program
-will replace unsupported claims with literal master facts, avoiding new inventions.
+contains objects with path, fragment, reason, and valid_evidence_ids. Use ONLY these
+paths: headline, summary, skill:N, bullet:ROLE_ID:N (N is a zero-based index).
+fragment quotes the exact failing text; reason explains the precise unsupported
+assertion or field-type violation. valid_evidence_ids lists supplied master evidence
+that remains valid for this field, even when part of the text must be removed.
+Group all failing fragments of one field into one finding (quote them in fragment
+and explain each in reason). Do not provide replacement prose.
+Reject summary/headline reduced to a degree, language, date or single administrative
+entry, even if literally true. Summary must retain professional experience and
+competencies; headline must describe the professional briefly.
 Populate the relevant structured feedback for EVERY issue. If fully supported,
 supported=true and all four arrays must be empty. Faithful paraphrases and standard
 domain synonyms are acceptable; don't require identical wording to establish support.

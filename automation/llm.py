@@ -47,7 +47,7 @@ class LLM:
             self.output_guard(result)
 
     def request(self, stage, data, schema):
-        if stage not in ('extract', 'adapt', 'audit'):
+        if stage not in ('extract', 'adapt', 'audit', 'repair'):
             raise ValueError('Unknown LLM stage.')
         prompt = (self.root / 'automation/prompts' / f'{stage}.txt').read_text(encoding='utf-8')
         key = fingerprint({'prompt': prompt, 'data': data, 'schema': schema,

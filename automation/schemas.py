@@ -25,7 +25,8 @@ ADAPTATION = obj({
     'experience': array(obj({'role_id': S, 'bullets': array(CLAIM)})),
     'skills': array(CLAIM), 'decisions': STRINGS, 'questions': STRINGS})
 AUDIT = obj({'supported': {'type': 'boolean'}, 'issues': STRINGS,
-             'extraction_issues': STRINGS, 'unsupported_claims': STRINGS,
+             'extraction_issues': STRINGS, 'unsupported_claims': array(obj({
+                 'path': S, 'fragment': S, 'reason': S, 'valid_evidence_ids': STRINGS})),
              'match_corrections': array(obj({'requirement_id': S,
                                             'status': {'type': 'string', 'enum': ['transferable', 'gap', 'unconfirmed']},
                                             'rationale': S}))})

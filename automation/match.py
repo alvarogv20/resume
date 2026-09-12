@@ -52,6 +52,19 @@ def validate_adaptation(profile, job, adapted):
     if not 1 <= len(adapted['skills']) <= 3 or sum(len(s['text'].split()) for s in adapted['skills']) > 80:
         raise ValueError('Skills need 1-3 lines totaling at most 80 words.')
     facts = fact_index(profile)
+    professional = {f['id'] for r in profile['experience'] for f in r['facts']}
+    professional.update(f['id'] for f in profile['skills'])
+    titles = {r['id']: r['title'] for r in profile['experience']}
+    administrative = {f['text'].strip().casefold() for group in ('education', 'languages') for f in profile[group]}
+    administrative.update(facts[r['id']].strip().casefold() for r in profile['experience'])
+    for field in ('summary', 'headline'):
+        claim = adapted[field]
+        text = claim['text'].strip()
+        title_only = field == 'headline' and any(
+            text.casefold() == titles.get(i, '').casefold() for i in claim['evidence_ids'])
+        if (not (set(claim['evidence_ids']) & professional or title_only)
+                or text.casefold() in administrative or not re.search(r'[^\W\d_]', text)):
+            raise ValueError(f'{field} must describe professional experience or competencies, not education, language, dates or administration.')
     role_ids = [role['id'] for role in profile['experience']]
     if [role['role_id'] for role in adapted['experience']] != role_ids:
         raise ValueError('All roles must retain master order and identity.')

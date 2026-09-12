@@ -120,13 +120,13 @@ class PipelineTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder, ExitStack() as stack:
             root, args, settings, provider, _ = self.setup_run(folder, stack)
             _, job, adapted = fixture()
-            first = {**AUDITED, 'supported': False, 'unsupported_claims': ['summary']}
+            first = {**AUDITED, 'supported': False, 'unsupported_claims': [{'path': 'summary', 'fragment': 'developer', 'reason': 'Scope unsupported', 'valid_evidence_ids': ['fact-a']}]}
             second = {**AUDITED, 'supported': False, 'match_corrections': [
                 {'requirement_id': 'r01', 'status': 'transferable', 'rationale': 'Partial support'}]}
-            provider.request.side_effect = [Result(job), Result(adapted), Result(first), Result(second), Result(AUDITED)]
+            provider.request.side_effect = [Result(job), Result(adapted), Result(first), Result(adapted['summary']), Result(second), Result(AUDITED)]
             with patch('automation.pipeline.compile_pdf', side_effect=self.compile_ok):
                 pipeline.run(args, settings)
-            for call in provider.request.call_args_list[3:]:
+            for call in provider.request.call_args_list[4:]:
                 self.assertEqual(call.args[1]['audit_scope'], 'adaptation')
                 self.assertNotIn('source_text', call.args[1])
             report = json.loads((root / 'roles/test-role/validation.json').read_text())
@@ -136,8 +136,8 @@ class PipelineTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder, ExitStack() as stack:
             root, args, settings, provider, _ = self.setup_run(folder, stack)
             _, job, adapted = fixture()
-            rejected = {**AUDITED, 'supported': False, 'unsupported_claims': ['summary']}
-            provider.request.side_effect = [Result(job), Result(adapted)] + [Result(rejected)] * 4
+            rejected = {**AUDITED, 'supported': False, 'unsupported_claims': [{'path': 'summary', 'fragment': 'developer', 'reason': 'Scope unsupported', 'valid_evidence_ids': ['fact-a']}]}
+            provider.request.side_effect = [Result(job), Result(adapted), Result(rejected), Result(adapted['summary']), Result(rejected), Result(adapted['summary']), Result(rejected), Result(rejected)]
             with patch('automation.pipeline.compile_pdf') as compile, self.assertRaisesRegex(ValueError, 'bounded'):
                 pipeline.run(args, settings)
             compile.assert_not_called()
