@@ -30,6 +30,17 @@ qualifications'); use an empty condition for universal requirements. Never imply
 that a condition is met merely because a foreign university is listed in a profile.
 When correction_required or corrections_required is supplied, use that validator
 feedback to repair the previous extraction, checking against source_text.
+Make targeted corrections: preserve requirements and metadata not implicated by
+the feedback. Do not renumber unaffected IDs or rewrite their text, logic, options,
+priority, condition or source_quote. When merging requirements, retain one existing
+ID and remove only the merged rows; do not renumber the remaining requirements.
+Keep a shared experience threshold attached to its complete group: 'at least 3 years
+in programming & data science' is one logic=all requirement with one shared minimum,
+not two independent three-year minima. This exception outranks one-capability splitting.
+'System Engineering and Model Based System Engineering' and 'continuous improvement
+and relevant process management' retain AND in text and logic=all when grouped.
+Their preferred priority does not make them alternatives. Preserve genuine OR groups,
+such as 'PMP or other project management accreditation', as logic=any.
 Preserve exact short source quotes for each requirement, copied from source_text.
 Use required/preferred only when supported by the wording; otherwise unspecified.
 Complementary training is not automatically preferred: use unspecified unless the

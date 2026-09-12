@@ -127,7 +127,8 @@ def _generate(args, state, llm, profile, profile_bytes, implementation_hashes, c
     # Extraction is audited before this loop. Keep that accepted input fixed while
     # verifying conservative CV repairs, instead of reopening a different scope.
     if audit['extraction_issues']:
-        raise ValueError('Semantic extraction audit failed after correction; review the source.')
+        raise ValueError('Semantic extraction audit failed after correction; review the source. '
+                         'Remaining extraction issues: ' + dumps(audit['extraction_issues']).strip())
     for _ in range(3):
         if audit['supported'] and not any(audit[k] for k in ('issues', 'unsupported_claims', 'match_corrections')):
             break
