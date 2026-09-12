@@ -6,7 +6,8 @@ import unittest
 from unittest.mock import patch
 
 from automation.extract import canonical_url, check_public_url, page_text
-from automation.generate import assert_no_contacts, contact_tex, load_contacts, render, tex_escape
+from automation.generate import (assert_no_private_contacts, assert_no_public_contacts,
+                                 contact_tex, load_contacts, render, tex_escape)
 from automation.llm import LLM
 from automation.match import validate_adaptation, validate_job
 from automation.repair import repair
@@ -133,12 +134,23 @@ class PrivacyTests(unittest.TestCase):
             self.assertEqual(load_contacts(), CONTACTS)
         self.assertIn(CONTACTS['email'], contact_tex(CONTACTS))
         p, _, a = fixture()
-        assert_no_contacts(render(p, a, 'en'), CONTACTS)
+        assert_no_public_contacts(render(p, a, 'en'), CONTACTS)
 
-    def test_contact_leaks_rejected(self):
-        for text in (CONTACTS['email'], '34611222333', CONTACTS['linkedin'], 'someone@else.example'):
+    def test_private_contact_leaks_rejected_in_inputs(self):
+        for text in (CONTACTS['email'], '34611222333', CONTACTS['linkedin']):
             with self.subTest(text=text), self.assertRaises(ValueError):
-                assert_no_contacts(text, CONTACTS)
+                assert_no_private_contacts(text, CONTACTS)
+
+    def test_corporate_contacts_allowed_in_inputs(self):
+        for text in ('jobs@company.example', 'https://www.linkedin.com/in/recruiter/'):
+            with self.subTest(text=text):
+                assert_no_private_contacts(text, CONTACTS)
+
+    def test_all_email_and_linkedin_contacts_rejected_in_public_outputs(self):
+        for text in (CONTACTS['email'], '34611222333', CONTACTS['linkedin'],
+                     'jobs@company.example', 'https://www.linkedin.com/in/recruiter/'):
+            with self.subTest(text=text), self.assertRaises(ValueError):
+                assert_no_public_contacts(text, CONTACTS)
 
     def test_codex_does_not_inherit_secrets_or_repo(self):
         def fake_run(command, **kwargs):
