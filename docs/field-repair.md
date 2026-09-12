@@ -26,3 +26,19 @@ incluso con citas profesionales aÃ±adidas. El auditor comprueba tambiÃ©n sus
 parÃ¡frasis y que el contenido cumpla la funciÃ³n del campo.
 
 Pruebas: `python -m unittest discover -s tests -v`.
+
+## Excesos de longitud antes de la auditoría
+
+La generación apunta a 8–12 palabras en titular y 45–55 en resumen; los máximos
+siguen siendo 14 y 65. Si un campo los supera, se regenera únicamente ese campo
+con su texto, evidencias, conteo exacto y objetivo de 12 o 55 palabras. Se valida
+cada respuesta de forma independiente para poder reparar ambos campos a la vez.
+Se aceptan respuestas válidas dentro del máximo duro aunque excedan el objetivo.
+
+Hay dos intentos de longitud por campo compartidos entre los borradores de una
+ejecución, separados de los intentos de reparación semántica. Después se usa el
+fallback validado del campo. Se aplica al borrador inicial, su reintento por
+validación y la regeneración tras corregir la extracción. El borrador completo
+se valida y audita antes de compilar, también cuando se utiliza un fallback.
+Los presupuestos globales de peticiones y tiempo siguen vigentes; no se aumentan
+automáticamente. Sin un fallback válido o al agotar el presupuesto, se detiene.

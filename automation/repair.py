@@ -2,7 +2,7 @@
 import copy
 import itertools
 from jsonschema import ValidationError
-from .match import fact_index, validate_adaptation
+from .match import fact_index, validate_adaptation, validate_professional_field, WORD_LIMITS, WORD_TARGETS
 from .schemas import CLAIM
 
 
@@ -107,4 +107,46 @@ def repair(profile, job, adapted, audit, llm=None, attempts=None, language='en')
             claim.update(fallback(profile, path, finding['valid_evidence_ids'], limit))
     result['decisions'].append('Campos rechazados reparados con evidencia; fallback específico tras agotar los intentos generativos.')
     validate_adaptation(profile, job, result)
+    return result
+
+
+def repair_lengths(profile, adapted, llm, attempts=None, language='en'):
+    """Repair oversized professional fields independently, before full validation/audit."""
+    attempts = attempts if attempts is not None else {}
+    result = copy.deepcopy(adapted)
+    for field, limit in WORD_LIMITS.items():
+        claim = result[field]
+        if len(claim['text'].split()) <= limit:
+            continue
+        allowed = allowed_facts(profile, field)
+        error = f"{field}: {len(claim['text'].split())} words; maximum: {limit} words."
+        while attempts.get(field, 0) < 2:
+            attempts[field] = attempts.get(field, 0) + 1
+            payload = {
+                'field': field, 'previous_text': claim['text'],
+                'allowed_evidence': allowed, 'requested_language': language,
+                'instruction': 'Shorten only this field. Preserve supported meaning and evidence; add no claims.',
+                'rejection': {'path': field, 'fragment': claim['text'], 'reason': error,
+                              'valid_evidence_ids': [i for i in claim['evidence_ids'] if i in allowed]},
+                'length_limits': {'max_words': WORD_TARGETS[field], 'hard_max_words': limit},
+                'validation_error': error, 'attempt': attempts[field],
+            }
+            try:
+                regenerated = llm.request('repair', payload, CLAIM)
+            except ValueError as exc:
+                if str(exc) != 'LLM result does not match the stage schema.':
+                    raise
+                error = str(exc)
+                continue
+            try:
+                validate_professional_field(profile, field, regenerated)
+            except (ValueError, ValidationError) as exc:
+                error = str(exc)
+                claim = regenerated
+                continue
+            result[field] = regenerated
+            break
+        else:
+            result[field] = fallback(profile, field, result[field]['evidence_ids'], limit)
+            validate_professional_field(profile, field, result[field])
     return result

@@ -13,7 +13,7 @@ from .generate import ROOT, assert_no_private_contacts, assert_no_public_contact
 from .llm import LLM
 from .match import validate_adaptation, validate_job
 from .schemas import ADAPTATION, AUDIT, JOB
-from .repair import repair
+from .repair import repair, repair_lengths
 from .validate import compile_pdf
 from .preflight import validate_profile, check_tools
 from .state import RunState, atomic_json
@@ -87,15 +87,22 @@ def _generate(args, state, llm, profile, profile_bytes, implementation_hashes, c
     # Only evidence is needed: omit identity and administrative metadata (including YAML dates).
     model_profile = {k: profile[k] for k in ('experience', 'skills', 'education', 'languages', 'unconfirmed')
                      if k in profile}
+    length_attempts = {}
+
+    def fit_lengths(draft):
+        return repair_lengths(profile, draft, llm, length_attempts, args.language)
+
     print('LLM: match evidence and adapt CV...', flush=True)
     adapted = llm.request('adapt', {'master_profile': model_profile, 'job': job,
                                   'requested_language': args.language}, ADAPTATION)
+    adapted = fit_lengths(adapted)
     try:
         validate_adaptation(profile, job, adapted)
     except ValueError as error:
         adapted = llm.request('adapt', {'master_profile': model_profile, 'job': job,
                                       'requested_language': args.language, 'previous_draft': adapted,
                                       'corrections_required': [str(error)]}, ADAPTATION)
+        adapted = fit_lengths(adapted)
         validate_adaptation(profile, job, adapted)
     print('LLM: verify factual support...', flush=True)
     audit = llm.request('audit', {'master_profile': model_profile, 'source_text': source,
@@ -109,6 +116,7 @@ def _generate(args, state, llm, profile, profile_bytes, implementation_hashes, c
         validate_job(job, source)
         adapted = llm.request('adapt', {'master_profile': model_profile, 'job': job,
                                       'requested_language': args.language}, ADAPTATION)
+        adapted = fit_lengths(adapted)
         validate_adaptation(profile, job, adapted)
         print('Auditing the corrected draft...', flush=True)
         audit = llm.request('audit', {'master_profile': model_profile, 'source_text': source,

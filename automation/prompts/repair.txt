@@ -9,3 +9,6 @@ Resolve validation_error when present. Never reduce summary or headline to a deg
 language, date, or single administrative entry. Summary must describe professional
 experience and competencies; headline must be a short professional description.
 No contacts, URLs, markup or executable text.
+
+For a word-count rejection, shorten only this field without adding claims or cutting
+sentences mechanically. Aim below length_limits.max_words; preserve supported meaning.

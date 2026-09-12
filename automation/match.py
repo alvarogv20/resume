@@ -1,7 +1,7 @@
 """Validate evidence links independently of the model's self-assessment."""
 import re
 from jsonschema import validate
-from .schemas import ADAPTATION, JOB
+from .schemas import ADAPTATION, JOB, CLAIM
 
 
 def fact_index(profile):
@@ -45,26 +45,48 @@ def validate_job(job, source):
             raise ValueError('Grouped requirements need at least two distinct nonempty options.')
 
 
-def validate_adaptation(profile, job, adapted):
-    validate(adapted, ADAPTATION)
-    if len(adapted['headline']['text'].split()) > 14 or len(adapted['summary']['text'].split()) > 65:
-        raise ValueError('Headline must be at most 14 words; summary at most 65 words.')
-    if not 1 <= len(adapted['skills']) <= 3 or sum(len(s['text'].split()) for s in adapted['skills']) > 80:
-        raise ValueError('Skills need 1-3 lines totaling at most 80 words.')
+WORD_LIMITS = {'headline': 14, 'summary': 65}
+WORD_TARGETS = {'headline': 12, 'summary': 55}
+
+
+def validate_claim(claim, facts):
+    validate(claim, CLAIM)
+    if not claim['text'].strip() or not claim['evidence_ids'] or set(claim['evidence_ids']) - facts.keys():
+        raise ValueError('CV claim missing known evidence.')
+    if re.search(r'@|https?://|linkedin\.com|[<>\\]', claim['text'], re.I):
+        raise ValueError('CV claim contains contacts, markup or executable text.')
+    numbers = set(re.findall(r'\d+(?:[.,]\d+)?', claim['text']))
+    evidence = ' '.join(facts[i] for i in claim['evidence_ids'])
+    if numbers - set(re.findall(r'\d+(?:[.,]\d+)?', evidence)):
+        raise ValueError('CV claim contains unsupported numeric facts.')
+
+
+def validate_professional_field(profile, field, claim):
     facts = fact_index(profile)
+    validate_claim(claim, facts)
+    count = len(claim['text'].split())
+    if count > WORD_LIMITS[field]:
+        raise ValueError(f'{field}: {count} words; maximum: {WORD_LIMITS[field]} words.')
     professional = {f['id'] for r in profile['experience'] for f in r['facts']}
     professional.update(f['id'] for f in profile['skills'])
     titles = {r['id']: r['title'] for r in profile['experience']}
     administrative = {f['text'].strip().casefold() for group in ('education', 'languages') for f in profile[group]}
     administrative.update(facts[r['id']].strip().casefold() for r in profile['experience'])
-    for field in ('summary', 'headline'):
-        claim = adapted[field]
-        text = claim['text'].strip()
-        title_only = field == 'headline' and any(
-            text.casefold() == titles.get(i, '').casefold() for i in claim['evidence_ids'])
-        if (not (set(claim['evidence_ids']) & professional or title_only)
-                or text.casefold() in administrative or not re.search(r'[^\W\d_]', text)):
-            raise ValueError(f'{field} must describe professional experience or competencies, not education, language, dates or administration.')
+    text = claim['text'].strip()
+    title_only = field == 'headline' and any(
+        text.casefold() == titles.get(i, '').casefold() for i in claim['evidence_ids'])
+    if (not (set(claim['evidence_ids']) & professional or title_only)
+            or text.casefold() in administrative or not re.search(r'[^\W\d_]', text)):
+        raise ValueError(f'{field} must describe professional experience or competencies, not education, language, dates or administration.')
+
+
+def validate_adaptation(profile, job, adapted):
+    validate(adapted, ADAPTATION)
+    if not 1 <= len(adapted['skills']) <= 3 or sum(len(s['text'].split()) for s in adapted['skills']) > 80:
+        raise ValueError('Skills need 1-3 lines totaling at most 80 words.')
+    facts = fact_index(profile)
+    for field in WORD_LIMITS:
+        validate_professional_field(profile, field, adapted[field])
     role_ids = [role['id'] for role in profile['experience']]
     if [role['role_id'] for role in adapted['experience']] != role_ids:
         raise ValueError('All roles must retain master order and identity.')
@@ -94,12 +116,5 @@ def validate_adaptation(profile, job, adapted):
                 raise ValueError('Bullet cites evidence from the wrong role.')
         claims.extend(role['bullets'])
     for claim in claims:
-        if not claim['text'].strip() or not claim['evidence_ids'] or set(claim['evidence_ids']) - facts.keys():
-            raise ValueError('CV claim missing known evidence.')
-        if re.search(r'@|https?://|linkedin\.com|[<>\\]', claim['text'], re.I):
-            raise ValueError('CV claim contains contacts, markup or executable text.')
-        numbers = set(re.findall(r'\d+(?:[.,]\d+)?', claim['text']))
-        evidence = ' '.join(facts[i] for i in claim['evidence_ids'])
-        if numbers - set(re.findall(r'\d+(?:[.,]\d+)?', evidence)):
-            raise ValueError('CV claim contains unsupported numeric facts.')
+        validate_claim(claim, facts)
     return facts

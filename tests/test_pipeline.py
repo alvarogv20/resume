@@ -132,6 +132,59 @@ class PipelineTests(unittest.TestCase):
             report = json.loads((root / 'roles/test-role/validation.json').read_text())
             self.assertEqual(len(report['repair_history']), 2)
 
+    def test_length_repairs_are_audited_on_every_adaptation_route(self):
+        for route in ('initial', 'validation_retry', 'extraction_retry'):
+            with self.subTest(route=route), tempfile.TemporaryDirectory() as folder, ExitStack() as stack:
+                root, args, settings, provider, _ = self.setup_run(folder, stack)
+                _, job, adapted = fixture()
+                oversized = copy.deepcopy(adapted)
+                oversized['summary']['text'] = 'Python ' * 66
+                outputs = [Result(job)]
+                if route == 'validation_retry':
+                    invalid = copy.deepcopy(adapted)
+                    invalid['matches'] = []
+                    outputs.append(Result(invalid))
+                elif route == 'extraction_retry':
+                    outputs += [Result(adapted), Result({**AUDITED, 'supported': False,
+                                                       'extraction_issues': ['Lost qualifier']})]
+                    corrected = copy.deepcopy(job)
+                    corrected['requirements'][0]['condition'] = 'For this role'
+                    outputs.append(Result(corrected))
+                outputs += [Result(oversized), Result(adapted['summary']), Result(AUDITED)]
+                provider.request.side_effect = outputs
+                with patch('automation.pipeline.compile_pdf', side_effect=self.compile_ok):
+                    pipeline.run(args, settings)
+                final_audit = provider.request.call_args.args[1]
+                self.assertEqual(final_audit['adaptation']['summary'], adapted['summary'])
+                self.assertTrue((root / 'roles/test-role').exists())
+                self.assertEqual(provider.request.call_count, len(outputs))
+
+    def test_length_budget_failure_does_not_regenerate_entire_draft(self):
+        with tempfile.TemporaryDirectory() as folder, ExitStack() as stack:
+            _, args, settings, provider, _ = self.setup_run(folder, stack)
+            _, job, adapted = fixture()
+            adapted['summary']['text'] = 'Python ' * 66
+            provider.request.side_effect = [Result(job), Result(adapted),
+                                            ValueError('LLM request budget exhausted')]
+            with patch('automation.pipeline.compile_pdf') as compile:
+                with self.assertRaisesRegex(ValueError, 'budget'):
+                    pipeline.run(args, settings)
+            self.assertEqual(provider.request.call_count, 3)
+            compile.assert_not_called()
+
+    def test_length_fallback_is_audited_before_compilation(self):
+        with tempfile.TemporaryDirectory() as folder, ExitStack() as stack:
+            root, args, settings, provider, _ = self.setup_run(folder, stack)
+            _, job, adapted = fixture()
+            oversized = copy.deepcopy(adapted)
+            oversized['summary']['text'] = 'Python ' * 66
+            provider.request.side_effect = [Result(job), Result(oversized),
+                Result(oversized['summary']), Result(oversized['summary']), Result(AUDITED)]
+            with patch('automation.pipeline.compile_pdf', side_effect=self.compile_ok):
+                pipeline.run(args, settings)
+            self.assertEqual(provider.request.call_args.args[1]['adaptation']['summary']['text'],
+                             'Developed Python tools. Used MATLAB.')
+
     def test_repeated_rejection_stops_without_pdf(self):
         with tempfile.TemporaryDirectory() as folder, ExitStack() as stack:
             root, args, settings, provider, _ = self.setup_run(folder, stack)
