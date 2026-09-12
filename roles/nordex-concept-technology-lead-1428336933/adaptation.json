@@ -1,0 +1,377 @@
+{
+  "matches": [
+    {
+      "requirement_id": "r01",
+      "status": "direct",
+      "evidence_ids": [
+        "edu-master"
+      ],
+      "rationale": "El perfil acredita explícitamente un máster en Ingeniería Aeronáutica, que satisface la alternativa de grado en ingeniería."
+    },
+    {
+      "requirement_id": "r02",
+      "status": "direct",
+      "evidence_ids": [
+        "solute-loads",
+        "solute-pm",
+        "solute-lead",
+        "lead-team"
+      ],
+      "rationale": "Las funciones fechadas desde diciembre de 2021 hasta la actualidad incluyen desarrollo de metodologías, desarrollo de sistemas y supervisión explícita de objetivos de I+D."
+    },
+    {
+      "requirement_id": "r03",
+      "status": "gap",
+      "evidence_ids": [
+        "loads-methods",
+        "loads-simulation",
+        "skills-engineering"
+      ],
+      "rationale": "La aeroelasticidad está acreditada, pero no hay evidencia explícita de experiencia en aerodinámica ni en conceptos de diseño de palas; al ser una exigencia conjunta, queda incompleta."
+    },
+    {
+      "requirement_id": "r04",
+      "status": "transferable",
+      "evidence_ids": [
+        "loads-simulation",
+        "loads-sites",
+        "pm-certification"
+      ],
+      "rationale": "Existe experiencia sólida en análisis de cargas, simulaciones y certificación de aerogeneradores, pero el perfil no acredita explícitamente cálculos específicos de tecnología de palas."
+    },
+    {
+      "requirement_id": "r05",
+      "status": "unconfirmed",
+      "evidence_ids": [],
+      "rationale": "No hay evidencia suficiente sobre flexibilidad para trabajar con todas las áreas de la empresa."
+    },
+    {
+      "requirement_id": "r06",
+      "status": "transferable",
+      "evidence_ids": [
+        "pm-wind",
+        "pm-certification"
+      ],
+      "rationale": "Se acredita coordinación de equipos de ingeniería y proyectos internacionales, pero no se documenta explícitamente el trabajo en equipos diversos."
+    },
+    {
+      "requirement_id": "r07",
+      "status": "transferable",
+      "evidence_ids": [
+        "lead-customers"
+      ],
+      "rationale": "La coordinación de comunicaciones con clientes respalda capacidad de comunicación, pero no demuestra por sí sola el nivel «excellent» exigido."
+    },
+    {
+      "requirement_id": "r08",
+      "status": "direct",
+      "evidence_ids": [
+        "lead-team"
+      ],
+      "rationale": "La gestión de un equipo de 10 personas y la supervisión de objetivos de I+D evidencian liderazgo explícito."
+    },
+    {
+      "requirement_id": "r09",
+      "status": "transferable",
+      "evidence_ids": [
+        "pm-wind",
+        "lead-customers"
+      ],
+      "rationale": "La coordinación técnica, funcional y con clientes es transferible a integración, pero el perfil no menciona explícitamente integration skills."
+    },
+    {
+      "requirement_id": "r10",
+      "status": "direct",
+      "evidence_ids": [
+        "lang-en"
+      ],
+      "rationale": "El perfil acredita inglés avanzado con competencia profesional de trabajo."
+    },
+    {
+      "requirement_id": "r11",
+      "status": "transferable",
+      "evidence_ids": [
+        "loads-python",
+        "loads-simulation"
+      ],
+      "rationale": "El desarrollo de scripts y la ejecución de simulaciones demuestran trabajo técnico práctico, pero no existe una declaración explícita de hands-on mentality."
+    },
+    {
+      "requirement_id": "r12",
+      "status": "unconfirmed",
+      "evidence_ids": [],
+      "rationale": "No hay evidencia sobre una personalidad con fuerte capacidad de toma de decisiones."
+    },
+    {
+      "requirement_id": "r13",
+      "status": "direct",
+      "evidence_ids": [
+        "skills-tools",
+        "skills-engineering"
+      ],
+      "rationale": "Se enumeran herramientas de ingeniería generales y especializadas, junto con experiencia explícita de uso en simulación y desarrollo de metodologías."
+    },
+    {
+      "requirement_id": "r14",
+      "status": "transferable",
+      "evidence_ids": [
+        "skills-projects"
+      ],
+      "rationale": "MS Project está acreditado, pero no hay evidencia de MS Office en conjunto ni de Planner; la cobertura de herramientas es parcial."
+    },
+    {
+      "requirement_id": "r15",
+      "status": "transferable",
+      "evidence_ids": [
+        "pm-wind",
+        "loads-simulation"
+      ],
+      "rationale": "El perfil demuestra experiencia técnica en proyectos y simulaciones de aerogeneradores, pero no acredita explícitamente expertise en tecnología del generador y todos sus sistemas asociados."
+    },
+    {
+      "requirement_id": "r16",
+      "status": "direct",
+      "evidence_ids": [
+        "lead-team"
+      ],
+      "rationale": "La responsabilidad explícita sobre un equipo de 10 miembros acredita people management."
+    },
+    {
+      "requirement_id": "r17",
+      "status": "transferable",
+      "evidence_ids": [
+        "loads-methods",
+        "loads-python"
+      ],
+      "rationale": "El desarrollo de metodologías y la optimización de flujos de cálculo apoyan la capacidad de avance tecnológico, pero no se declara explícitamente ownership de technological advancements."
+    },
+    {
+      "requirement_id": "r18",
+      "status": "transferable",
+      "evidence_ids": [
+        "loads-methods",
+        "loads-python"
+      ],
+      "rationale": "La creación de metodologías y la optimización del diseño son experiencias relacionadas con innovación, aunque no se acredita explícitamente iniciar y dirigir iniciativas de innovación."
+    },
+    {
+      "requirement_id": "r19",
+      "status": "transferable",
+      "evidence_ids": [
+        "loads-methods",
+        "loads-simulation",
+        "skills-engineering"
+      ],
+      "rationale": "La aeroelasticidad y las cargas aerodinámicas son áreas adyacentes, pero el perfil no declara conocimiento independiente de aerodynamics."
+    },
+    {
+      "requirement_id": "r20",
+      "status": "gap",
+      "evidence_ids": [],
+      "rationale": "No hay evidencia explícita de conocimiento de conceptos de diseño de palas."
+    },
+    {
+      "requirement_id": "r21",
+      "status": "direct",
+      "evidence_ids": [
+        "skills-engineering",
+        "loads-simulation"
+      ],
+      "rationale": "Aeroelasticity aparece explícitamente como competencia y se respalda con simulaciones aeroelásticas realizadas."
+    },
+    {
+      "requirement_id": "r22",
+      "status": "transferable",
+      "evidence_ids": [
+        "loads-python"
+      ],
+      "rationale": "La optimización del diseño de aerogeneradores es relacionada con rotor optimisation, pero el perfil no menciona explícitamente optimización del rotor."
+    },
+    {
+      "requirement_id": "r23",
+      "status": "transferable",
+      "evidence_ids": [
+        "pm-uav",
+        "loads-simulation",
+        "pm-wind"
+      ],
+      "rationale": "Se acredita liderazgo de desarrollos y ejecución de análisis de ingeniería, pero no se demuestra de forma explícita liderar análisis conceptuales en el sentido exacto del requisito."
+    },
+    {
+      "requirement_id": "r24",
+      "status": "transferable",
+      "evidence_ids": [
+        "pm-wind",
+        "solute-pm"
+      ],
+      "rationale": "El título de Project Manager y la coordinación de equipos respaldan experiencia relacionada, pero no acreditan explícitamente la gestión de equipos de proyecto pequeños o medianos."
+    },
+    {
+      "requirement_id": "r25",
+      "status": "transferable",
+      "evidence_ids": [
+        "pm-wind",
+        "pm-uav"
+      ],
+      "rationale": "La coordinación técnica, los requisitos y la arquitectura de sistemas son transferibles a guidance técnico, pero no se declara explícitamente strong technical guidance."
+    },
+    {
+      "requirement_id": "r26",
+      "status": "transferable",
+      "evidence_ids": [
+        "pm-wind",
+        "lead-team"
+      ],
+      "rationale": "La coordinación de equipos y la organización de cargas de trabajo apoyan la colaboración, aunque foster collaboration no aparece como actividad explícita."
+    },
+    {
+      "requirement_id": "r27",
+      "status": "gap",
+      "evidence_ids": [],
+      "rationale": "No hay evidencia de asesoramiento técnico a estrategia de producto, ingeniería y alta dirección."
+    },
+    {
+      "requirement_id": "r28",
+      "status": "unconfirmed",
+      "evidence_ids": [],
+      "rationale": "El perfil no aporta evidencia explícita sobre documentación profesional de resultados."
+    },
+    {
+      "requirement_id": "r29",
+      "status": "transferable",
+      "evidence_ids": [
+        "lead-customers",
+        "pm-wind"
+      ],
+      "rationale": "La comunicación con clientes y equipos de ingeniería es relevante, pero no hay evidencia de comunicación con todas las funciones desde planta hasta consejo."
+    }
+  ],
+  "headline": {
+    "text": "Wind Energy Aeroelasticity and Controls Lead",
+    "evidence_ids": [
+      "solute-lead",
+      "skills-engineering"
+    ]
+  },
+  "summary": {
+    "text": "Aeroelasticity and controls leader with experience managing a 10-member team, coordinating wind turbine projects, developing engineering methodologies, performing aeroelastic simulations, and supporting requirements, certification, testing, and customer communications.",
+    "evidence_ids": [
+      "lead-team",
+      "pm-wind",
+      "loads-methods",
+      "loads-simulation",
+      "pm-uav",
+      "pm-certification",
+      "lead-customers"
+    ]
+  },
+  "experience": [
+    {
+      "role_id": "solute-lead",
+      "bullets": [
+        {
+          "text": "Manage a 10-member Aeroelasticity & Controls team, organizing workloads and supervising R&D objectives.",
+          "evidence_ids": [
+            "lead-team"
+          ]
+        },
+        {
+          "text": "Coordinate customer communications and support commercial requirements.",
+          "evidence_ids": [
+            "lead-customers"
+          ]
+        },
+        {
+          "text": "Prepare technical and commercial proposals for business development and client portfolio diversification.",
+          "evidence_ids": [
+            "lead-proposals"
+          ]
+        }
+      ]
+    },
+    {
+      "role_id": "solute-pm",
+      "bullets": [
+        {
+          "text": "Led development of a rotating-wing UAV for wind turbine inspection, covering technical requirements, system architecture, certification processes, and testing.",
+          "evidence_ids": [
+            "pm-uav"
+          ]
+        },
+        {
+          "text": "Provided technical and functional coordination for wind turbine projects and engineering teams, including life extension and structural integrity.",
+          "evidence_ids": [
+            "pm-wind"
+          ]
+        },
+        {
+          "text": "Managed load certification processes against IEC/DNV standards for international projects.",
+          "evidence_ids": [
+            "pm-certification"
+          ]
+        }
+      ]
+    },
+    {
+      "role_id": "solute-loads",
+      "bullets": [
+        {
+          "text": "Developed Python and MATLAB scripts to reduce load calculation cycle times and support wind turbine design optimization.",
+          "evidence_ids": [
+            "loads-python"
+          ]
+        },
+        {
+          "text": "Developed engineering methodologies for Dynamic Wake Meandering and floating wind turbine loads.",
+          "evidence_ids": [
+            "loads-methods"
+          ]
+        },
+        {
+          "text": "Performed aeroelastic simulations and dynamic load analyses for offshore turbines in bottom-fixed and floating configurations.",
+          "evidence_ids": [
+            "loads-simulation"
+          ]
+        },
+        {
+          "text": "Conducted site-specific assessments and control tuning for wind turbine projects.",
+          "evidence_ids": [
+            "loads-sites"
+          ]
+        }
+      ]
+    }
+  ],
+  "skills": [
+    {
+      "text": "Python, MATLAB, Git; engineering methodology development; simulation workflow optimization.",
+      "evidence_ids": [
+        "skills-tools"
+      ]
+    },
+    {
+      "text": "Aeroelasticity, structural dynamics, Bladed, HAWC2, Fluent, NX, and CATIA V5.",
+      "evidence_ids": [
+        "skills-engineering"
+      ]
+    },
+    {
+      "text": "Team leadership, R&D supervision, customer coordination, technical requirements, system architecture, IEC/DNV certification, MS Project, Jira, and Smartsheet.",
+      "evidence_ids": [
+        "skills-coordination",
+        "skills-projects"
+      ]
+    }
+  ],
+  "decisions": [
+    "Se marcaron como gap las exigencias explícitas de diseño de palas y asesoramiento a alta dirección por ausencia de evidencia factual.",
+    "Se marcaron como unconfirmed los requisitos sin evidencia suficiente, sin convertirlos en gaps del historial profesional.",
+    "Se usaron estados transferable para cubrir experiencias adyacentes y se explicitaron sus limitaciones.",
+    "Se excluyeron del CV SCADA, métodos probabilísticos, Alaska, Flex5, ML, redes neuronales, viajes y certificaciones no acreditadas.",
+    "La auditoría aplicó correcciones conservadoras: coincidencias rebajadas y afirmaciones dudosas sustituidas por hechos literales del maestro."
+  ],
+  "questions": [
+    "¿Debe confirmarse experiencia específica en aerodinámica, conceptos de diseño de palas o rotor optimisation?",
+    "¿Debe confirmarse experiencia con MS Office/Planner, documentación profesional de resultados y comunicación con funciones desde planta hasta dirección?"
+  ]
+}
