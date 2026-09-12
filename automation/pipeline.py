@@ -9,7 +9,7 @@ import tempfile
 
 import yaml
 from .extract import canonical_url, fetch_job
-from .generate import ROOT, assert_no_contacts, load_contacts, render
+from .generate import ROOT, assert_no_private_contacts, assert_no_public_contacts, load_contacts, render
 from .llm import LLM
 from .match import validate_adaptation, validate_job
 from .schemas import ADAPTATION, AUDIT, JOB
@@ -39,7 +39,7 @@ def run(args, settings):
     profile_bytes = (ROOT / 'profile' / 'profile.yaml').read_bytes()
     profile = yaml.safe_load(profile_bytes)
     # Reject accidental contact additions before any network/model call.
-    assert_no_contacts(profile_bytes.decode('utf-8'), contacts)
+    assert_no_private_contacts(profile_bytes.decode('utf-8'), contacts)
     validate_profile(profile)
     args.tectonic = check_tools(args.tectonic)
     url = canonical_url(args.url)
@@ -47,14 +47,14 @@ def run(args, settings):
     if supplied is not None:
         if not 250 <= len(supplied) <= 45000:
             raise ValueError('Job text must contain 250-45000 characters.')
-        assert_no_contacts(supplied, contacts)
+        assert_no_private_contacts(supplied, contacts)
     identity = {'url': url, 'supplied_text': digest(supplied.encode()) if supplied is not None else None,
                 'profile': digest(profile_bytes), 'implementation': implementation_hashes,
                 'language': args.language, 'settings': settings.identity()}
     runs_root = Path(os.environ.get('CV_RUNS_DIR') or ROOT / '.private/runs')
     with RunState(runs_root / args.slug, identity, args.resume) as state:
         llm = LLM(settings=settings, state=state, root=ROOT,
-                  output_guard=lambda value: assert_no_contacts(dumps(value), contacts))
+                  output_guard=lambda value: assert_no_public_contacts(dumps(value), contacts))
         llm.preflight()
         _generate(args, state, llm, profile, profile_bytes, implementation_hashes, contacts, url, supplied)
 
@@ -73,9 +73,9 @@ def _generate(args, state, llm, profile, profile_bytes, implementation_hashes, c
         else:
             url, source = fetch_job(url)
             source_method = 'public-http'
-        assert_no_contacts(source, contacts)
+        assert_no_private_contacts(source, contacts)
         atomic_json(source_file, {'text': source, 'method': source_method, 'sha256': digest(source.encode())})
-    assert_no_contacts(source, contacts)
+    assert_no_private_contacts(source, contacts)
     print('LLM: extract requirements...', flush=True)
     job = llm.request('extract', {'source_text': source}, JOB)
     try:
@@ -175,7 +175,7 @@ def _generate(args, state, llm, profile, profile_bytes, implementation_hashes, c
              'match.md': '\n'.join(analysis), 'cv.tex': tex, 'decisions.md': decisions,
              'validation.json': dumps(report)}
     for content in files.values():
-        assert_no_contacts(content, contacts)
+        assert_no_public_contacts(content, contacts)
     pdf_path.parent.mkdir(parents=True, exist_ok=True)
     # Copy through a sibling temp file: CV_RUNS_DIR may be on another volume.
     with tempfile.NamedTemporaryFile(dir=pdf_path.parent, suffix='.pdf', delete=False) as temp_pdf:

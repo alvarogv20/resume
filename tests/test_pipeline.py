@@ -90,6 +90,17 @@ class PipelineTests(unittest.TestCase):
                 pipeline.run(args, settings)
             self.assertEqual(provider.request.call_count, 3)
 
+    def test_corporate_email_in_offer_and_profile_is_allowed(self):
+        with tempfile.TemporaryDirectory() as folder, ExitStack() as stack:
+            root, args, settings, provider, profile = self.setup_run(folder, stack)
+            args.job_text.write_text(('Python jobs@company.example ' * 20), encoding='utf-8')
+            profile['skills'].append({'id': 'contact-route', 'text': 'Recruiting contact: careers@employer.example'})
+            (root / 'profile/profile.yaml').write_text(yaml.safe_dump(profile), encoding='utf-8')
+            with patch('automation.pipeline.compile_pdf', side_effect=self.compile_ok):
+                pipeline.run(args, settings)
+            self.assertEqual(provider.request.call_count, 3)
+            self.assertTrue((root / 'roles/test-role').exists())
+
     def test_semantic_extraction_repair_is_preserved(self):
         with tempfile.TemporaryDirectory() as folder, ExitStack() as stack:
             root, args, settings, provider, _ = self.setup_run(folder, stack)

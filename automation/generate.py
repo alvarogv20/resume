@@ -60,11 +60,22 @@ def render(profile, adapted, language):
                                                        labels=labels)
 
 
-def assert_no_contacts(text, contacts):
+def _contains_private_contact(text, contacts):
     normalized = re.sub(r'[^a-z0-9]', '', text.lower())
     for value in contacts.values():
         token = re.sub(r'[^a-z0-9]', '', value.lower())
         if token in normalized:
-            raise ValueError('Private contact found in publishable output.')
+            return True
+    return False
+
+
+def assert_no_private_contacts(text, contacts):
+    if _contains_private_contact(text, contacts):
+        raise ValueError('Configured private contact found in input.')
+
+
+def assert_no_public_contacts(text, contacts):
+    if _contains_private_contact(text, contacts):
+        raise ValueError('Private contact found in publishable output.')
     if re.search(r'[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}|linkedin\.com/in/', text, re.I):
         raise ValueError('A personal contact was found in publishable output.')
