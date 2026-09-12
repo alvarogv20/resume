@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import Mock
 from jsonschema import validate, ValidationError
 from automation.match import validate_adaptation
-from automation.repair import repair, fallback
+from automation.repair import repair, fallback, repair_lengths
 from automation.schemas import AUDIT
 from test_automation import fixture
 
@@ -89,3 +89,47 @@ class RepairTests(unittest.TestCase):
         p, j, a = fixture()
         with self.assertRaisesRegex(ValueError, 'outside the field scope'):
             repair(p, j, a, rejection('bullet:role-b:0'))
+
+
+class LengthRepairTests(unittest.TestCase):
+    def test_both_fields_repaired_independently_and_rest_preserved(self):
+        p, j, a = fixture()
+        original = copy.deepcopy(a)
+        a['headline']['text'] = 'Engineer ' * 15
+        a['summary']['text'] = 'Developed Python tools ' * 23
+        llm = Mock()
+        llm.request.side_effect = [original['headline'], original['summary']]
+        fixed = repair_lengths(p, a, llm)
+        self.assertEqual(fixed, original)
+        self.assertEqual(len(a['headline']['text'].split()), 15)
+        calls = llm.request.call_args_list
+        self.assertEqual([c.args[1]['field'] for c in calls], ['headline', 'summary'])
+        self.assertIn('69 words', calls[1].args[1]['validation_error'])
+        self.assertEqual(calls[1].args[1]['length_limits']['max_words'], 55)
+        validate_adaptation(p, j, fixed)
+
+    def test_invalid_evidence_then_long_text_use_validated_fallback(self):
+        p, j, a = fixture()
+        a['summary']['text'] = 'Python ' * 66
+        llm = Mock()
+        llm.request.side_effect = [
+            {'text': 'Engineer', 'evidence_ids': ['unknown']},
+            {'text': 'Python ' * 66, 'evidence_ids': ['fact-a']}]
+        attempts = {}
+        fixed = repair_lengths(p, a, llm, attempts)
+        self.assertEqual(fixed['summary']['text'], 'Developed Python tools. Used MATLAB.')
+        self.assertEqual(attempts, {'summary': 2})
+        self.assertIn('known evidence', llm.request.call_args_list[1].args[1]['validation_error'])
+        validate_adaptation(p, j, fixed)
+        repair_lengths(p, a, llm, attempts)
+        self.assertEqual(llm.request.call_count, 2)
+
+    def test_budget_failure_propagates_and_noop_does_not_call_model(self):
+        p, _, a = fixture()
+        llm = Mock()
+        self.assertEqual(repair_lengths(p, a, llm), a)
+        llm.request.assert_not_called()
+        a['headline']['text'] = 'Engineer ' * 15
+        llm.request.side_effect = ValueError('LLM request budget exhausted')
+        with self.assertRaisesRegex(ValueError, 'budget'):
+            repair_lengths(p, a, llm)

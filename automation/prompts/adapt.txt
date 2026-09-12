@@ -21,7 +21,8 @@ role bullets must cite only fact IDs belonging to that role. Rephrase and
 prioritize relevant facts; never upgrade exposure into expertise or support into leadership.
 Keep all roles in reverse chronological order using exact role_ids. Use 2-4 concise
 bullets per role, each at most 32 words. Each bullet must cite facts from that role.
-Headline <= 14 words; summary <= 65 words. Skills: 2-3 compact lines totaling <= 80 words.
+Aim for 8-12 words in headline and 45-55 words in summary.
+Hard limits: headline <= 14 words; summary <= 65 words. Skills: 2-3 compact lines totaling <= 80 words.
 Summary must describe professional experience and competencies; headline must be a
 brief professional description. Neither may reduce to a degree, language, date or
 single administrative entry, even when that entry is supported by the profile.
