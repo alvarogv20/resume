@@ -1,4 +1,4 @@
-name: Tailor CV (private local Codex)
+name: Tailor CV (private automation repository)
 
 on:
   workflow_dispatch:
@@ -16,6 +16,21 @@ on:
         type: choice
         options: [en, es]
         default: en
+      provider:
+        description: Proveedor (configured utiliza config/default.toml)
+        type: choice
+        options: [configured, codex, openai, compatible]
+        default: configured
+      model:
+        description: Modelo opcional
+        type: string
+      base_url:
+        description: Base HTTPS opcional para API compatible (sin claves)
+        type: string
+      resume:
+        description: Reanudar el identificador existente
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -28,8 +43,8 @@ jobs:
   tailor:
     # No pull_request/push triggers on the private runner. Only the owner can
     # dispatch the reviewed default branch, never a caller-supplied code ref.
-    if: github.actor == github.repository_owner && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-    runs-on: [self-hosted, cv-private]
+    if: github.event.repository.private && github.actor == github.repository_owner && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: [self-hosted, Windows, cv-private]
     environment: cv-private
     timeout-minutes: 35
     permissions:
@@ -45,7 +60,6 @@ jobs:
       - name: Check private runner tools
         run: |
           python --version
-          codex login status
           tectonic --version
           python -c "import yaml, jinja2, jsonschema, pypdf"
       - name: Generate and validate CV locally
@@ -54,8 +68,22 @@ jobs:
           ROLE_SLUG: ${{ inputs.slug }}
           CV_LANGUAGE: ${{ inputs.language }}
           CV_CONTACT_JSON: ${{ secrets.CV_CONTACT_JSON }}
+          SELECTED_PROVIDER: ${{ inputs.provider }}
+          SELECTED_MODEL: ${{ inputs.model }}
+          SELECTED_BASE_URL: ${{ inputs.base_url }}
+          RESUME_RUN: ${{ inputs.resume }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
         run: |
-          python -m automation.run --url "$env:JOB_URL" --slug "$env:ROLE_SLUG" --language "$env:CV_LANGUAGE" --provider codex
+          $taskArgs = @('-m','automation.run','--url',$env:JOB_URL,'--slug',$env:ROLE_SLUG,'--language',$env:CV_LANGUAGE)
+          if ($env:SELECTED_PROVIDER -and $env:SELECTED_PROVIDER -ne 'configured') { $taskArgs += @('--provider',$env:SELECTED_PROVIDER) }
+          if ($env:SELECTED_MODEL) { $taskArgs += @('--model',$env:SELECTED_MODEL) }
+          if ($env:SELECTED_BASE_URL) { $taskArgs += @('--base-url',$env:SELECTED_BASE_URL) }
+          if ($env:RESUME_RUN -eq 'true') { $taskArgs += '--resume' }
+          # Checkpoints live outside checkout so a later checkout preserves failed runs.
+          $taskRunRoot = Join-Path $env:USERPROFILE 'CV-private/runs'
+          $env:CV_RUNS_DIR = $taskRunRoot
+          python @taskArgs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           # Persist final PDFs outside checkout so the next checkout cannot erase them.
           python -c "import os, pathlib, shutil; src=pathlib.Path('build')/os.environ['ROLE_SLUG']/'cv.pdf'; dst=pathlib.Path.home()/'CV-private'/'output'/os.environ['ROLE_SLUG']/'cv.pdf'; dst.parent.mkdir(parents=True,exist_ok=True); shutil.copyfile(src,dst)"
@@ -69,4 +97,4 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           python -m automation.publish --slug "$env:ROLE_SLUG" --base "$env:BASE_BRANCH"
-      # Deliberately no upload-artifact: PDFs from this public repo stay private.
+      # Deliberately no upload-artifact: complete PDFs remain on the private runner.

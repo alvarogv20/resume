@@ -35,11 +35,36 @@ def validate_job(job, source):
         quote = ' '.join(requirement['source_quote'].split()).rstrip('.,;:')
         if not quote or quote not in normalized:
             raise ValueError('A requirement quote is not present in the source.')
+        if not requirement['id'].strip() or not requirement['text'].strip():
+            raise ValueError('Requirement ID and text must be nonempty.')
+        options = requirement['options']
+        if requirement['logic'] == 'single' and options:
+            raise ValueError('A single requirement must have no alternative options.')
+        if requirement['logic'] != 'single' and (len(options) < 2 or len(set(options)) != len(options)
+                                                  or any(not x.strip() for x in options)):
+            raise ValueError('Grouped requirements need at least two distinct nonempty options.')
 
 
 def validate_adaptation(profile, job, adapted):
     validate(adapted, ADAPTATION)
+    if len(adapted['headline']['text'].split()) > 14 or len(adapted['summary']['text'].split()) > 65:
+        raise ValueError('Headline must be at most 14 words; summary at most 65 words.')
+    if not 1 <= len(adapted['skills']) <= 3 or sum(len(s['text'].split()) for s in adapted['skills']) > 80:
+        raise ValueError('Skills need 1-3 lines totaling at most 80 words.')
     facts = fact_index(profile)
+    professional = {f['id'] for r in profile['experience'] for f in r['facts']}
+    professional.update(f['id'] for f in profile['skills'])
+    titles = {r['id']: r['title'] for r in profile['experience']}
+    administrative = {f['text'].strip().casefold() for group in ('education', 'languages') for f in profile[group]}
+    administrative.update(facts[r['id']].strip().casefold() for r in profile['experience'])
+    for field in ('summary', 'headline'):
+        claim = adapted[field]
+        text = claim['text'].strip()
+        title_only = field == 'headline' and any(
+            text.casefold() == titles.get(i, '').casefold() for i in claim['evidence_ids'])
+        if (not (set(claim['evidence_ids']) & professional or title_only)
+                or text.casefold() in administrative or not re.search(r'[^\W\d_]', text)):
+            raise ValueError(f'{field} must describe professional experience or competencies, not education, language, dates or administration.')
     role_ids = [role['id'] for role in profile['experience']]
     if [role['role_id'] for role in adapted['experience']] != role_ids:
         raise ValueError('All roles must retain master order and identity.')
@@ -63,6 +88,8 @@ def validate_adaptation(profile, job, adapted):
             raise ValueError('Each role needs 1-4 supported bullets.')
         allowed = {fact['id'] for fact in master['facts']}
         for bullet in role['bullets']:
+            if len(bullet['text'].split()) > 32:
+                raise ValueError('Experience bullets must be at most 32 words.')
             if set(bullet['evidence_ids']) - allowed:
                 raise ValueError('Bullet cites evidence from the wrong role.')
         claims.extend(role['bullets'])

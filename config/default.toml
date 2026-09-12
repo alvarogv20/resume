@@ -1,0 +1,23 @@
+# Precedence: CLI > CV_* environment > selected TOML file > built-in defaults.
+provider = "codex"
+max_requests = 18
+max_seconds = 1800
+retries = 2
+max_output_tokens = 12000
+
+[providers.codex]
+model = "gpt-5.6-luna"
+reasoning = "medium"
+timeout = 600
+
+[providers.openai]
+model = "gpt-5-mini"
+base_url = "https://api.openai.com/v1"
+api_key_env = "OPENAI_API_KEY"
+timeout = 180
+
+[providers.compatible]
+# Set model and base_url explicitly for your service.
+api_key_env = "LLM_API_KEY"
+timeout = 180
+structured_output = "json_schema"

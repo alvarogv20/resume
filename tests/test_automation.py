@@ -25,7 +25,8 @@ def fixture():
         'skills': [], 'education': [], 'languages': []}
     job = {'title': 'Engineer', 'company': 'Employer', 'location': '', 'language': 'en',
            'conditions': [], 'responsibilities': [], 'requirements': [
-               {'id': 'r01', 'text': 'Python', 'priority': 'required', 'source_quote': 'Python'}]}
+               {'id': 'r01', 'text': 'Python', 'condition': '', 'logic': 'single', 'options': [],
+                'priority': 'required', 'source_quote': 'Python'}]}
     claim = {'text': 'Python tools developer', 'evidence_ids': ['fact-a']}
     adapted = {'matches': [{'requirement_id': 'r01', 'status': 'direct', 'evidence_ids': ['fact-a'], 'rationale': 'Explicit'}],
                'headline': copy.deepcopy(claim), 'summary': copy.deepcopy(claim), 'skills': [copy.deepcopy(claim)],
@@ -101,10 +102,10 @@ class EvidenceTests(unittest.TestCase):
 
     def test_audit_repairs_restore_literal_facts_and_downgrade(self):
         p, j, a = fixture()
-        audit = {'extraction_issues': [], 'unsupported_claims': ['summary'],
+        audit = {'extraction_issues': [], 'unsupported_claims': [{'path': 'summary', 'fragment': 'developer', 'reason': 'Scope unsupported', 'valid_evidence_ids': ['fact-a']}],
                  'match_corrections': [{'requirement_id': 'r01', 'status': 'transferable', 'rationale': 'Uso documentado, formación no confirmada.'}]}
         fixed = repair(p, j, a, audit)
-        self.assertEqual(fixed['summary']['text'], 'Developed Python tools.')
+        self.assertEqual(fixed['summary']['text'], 'Developed Python tools. Used MATLAB.')
         self.assertEqual(fixed['matches'][0]['status'], 'transferable')
         self.assertEqual(a['matches'][0]['status'], 'direct')
 

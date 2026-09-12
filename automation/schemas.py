@@ -12,7 +12,9 @@ STRINGS = array(S)
 CLAIM = obj({'text': S, 'evidence_ids': STRINGS})
 JOB = obj({'title': S, 'company': S, 'location': S, 'language': S,
            'conditions': STRINGS, 'responsibilities': STRINGS,
-           'requirements': array(obj({'id': S, 'text': S,
+           'requirements': array(obj({'id': S, 'text': S, 'condition': S,
+                                     'logic': {'type': 'string', 'enum': ['single', 'any', 'all']},
+                                     'options': STRINGS,
                                      'priority': {'type': 'string', 'enum': ['required', 'preferred', 'unspecified']},
                                      'source_quote': S}))})
 ADAPTATION = obj({
@@ -23,7 +25,8 @@ ADAPTATION = obj({
     'experience': array(obj({'role_id': S, 'bullets': array(CLAIM)})),
     'skills': array(CLAIM), 'decisions': STRINGS, 'questions': STRINGS})
 AUDIT = obj({'supported': {'type': 'boolean'}, 'issues': STRINGS,
-             'extraction_issues': STRINGS, 'unsupported_claims': STRINGS,
+             'extraction_issues': STRINGS, 'unsupported_claims': array(obj({
+                 'path': S, 'fragment': S, 'reason': S, 'valid_evidence_ids': STRINGS})),
              'match_corrections': array(obj({'requirement_id': S,
                                             'status': {'type': 'string', 'enum': ['transferable', 'gap', 'unconfirmed']},
                                             'rationale': S}))})
