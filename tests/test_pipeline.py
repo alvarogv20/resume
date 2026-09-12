@@ -116,6 +116,35 @@ class PipelineTests(unittest.TestCase):
             report = json.loads((root / 'roles/test-role/validation.json').read_text())
             self.assertEqual(report['extraction_repair_feedback'], ['Lost qualifier'])
 
+    def test_extraction_regression_reports_final_findings_without_publishing(self):
+        with tempfile.TemporaryDirectory() as folder, ExitStack() as stack:
+            root, args, settings, provider, _ = self.setup_run(folder, stack)
+            _, job, adapted = fixture()
+            first = {**AUDITED, 'supported': False,
+                     'extraction_issues': ['Keep the shared three-year threshold']}
+            remaining = ['r06: System Engineering AND MBSE, not OR',
+                         'r07: Continuous improvement AND process management, not OR']
+            second = {**AUDITED, 'supported': False, 'extraction_issues': remaining}
+            corrected = copy.deepcopy(job)
+            corrected['requirements'][0]['condition'] = 'Shared threshold'
+            provider.request.side_effect = [Result(job), Result(adapted), Result(first),
+                                            Result(corrected), Result(adapted), Result(second)]
+            with patch('automation.pipeline.compile_pdf') as compile:
+                with self.assertRaises(ValueError) as caught:
+                    pipeline.run(args, settings)
+            message = str(caught.exception)
+            self.assertIn('Semantic extraction audit failed after correction', message)
+            for finding in remaining:
+                self.assertIn(finding, message)
+            self.assertNotIn(first['extraction_issues'][0], message)
+            self.assertEqual(provider.request.call_count, 6)
+            correction_input = provider.request.call_args_list[3].args[1]
+            self.assertEqual(correction_input['previous_extraction'], job)
+            self.assertEqual(correction_input['corrections_required'], first['extraction_issues'])
+            compile.assert_not_called()
+            self.assertFalse((root / 'roles/test-role').exists())
+            self.assertFalse((root / 'build/test-role/cv.pdf').exists())
+
     def test_repair_audits_use_accepted_job_without_reopening_extraction(self):
         with tempfile.TemporaryDirectory() as folder, ExitStack() as stack:
             root, args, settings, provider, _ = self.setup_run(folder, stack)
