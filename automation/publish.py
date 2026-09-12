@@ -7,7 +7,7 @@ import re
 import subprocess
 import urllib.request
 
-from .generate import ROOT, assert_no_contacts, load_contacts
+from .generate import ROOT, assert_no_public_contacts, load_contacts
 
 FILES = ['source.md', 'job.json', 'adaptation.json', 'match.md', 'cv.tex', 'decisions.md', 'validation.json']
 
@@ -48,7 +48,7 @@ def main():
         item = ROOT / path
         if item.is_symlink() or not item.resolve().is_relative_to(ROOT / 'roles'):
             parser.error('Invalid output path.')
-        assert_no_contacts(item.read_text(encoding='utf-8'), contacts)
+        assert_no_public_contacts(item.read_text(encoding='utf-8'), contacts)
     branch = 'codex/cv-' + args.slug
     git('switch', '-c', branch)
     git('add', '--', *paths)
