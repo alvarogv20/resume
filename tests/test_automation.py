@@ -95,11 +95,10 @@ class EvidenceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate_adaptation(p, j, a)
 
-    def test_direct_match_cannot_admit_missing_evidence(self):
+    def test_unrelated_negative_phrase_does_not_veto_direct_match(self):
         p, j, a = fixture()
-        a['matches'][0]['rationale'] = 'Certification is evidenced; claims investigations are not evidenced.'
-        with self.assertRaises(ValueError):
-            validate_adaptation(p, j, a)
+        a['matches'][0]['rationale'] = 'Python está documentado; no se documenta MATLAB, que esta oferta no exige.'
+        validate_adaptation(p, j, a)
 
     def test_audit_repairs_restore_literal_facts_and_downgrade(self):
         p, j, a = fixture()

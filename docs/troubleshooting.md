@@ -64,3 +64,11 @@ python -m unittest discover -s tests -p test_pdf.py -v
 
 Usa contactos ficticios y un directorio temporal; comprueba el compilador y el texto
 extraíble, sin consumir un modelo ni marcar el PDF como revisado visualmente.
+
+## Recuperación por etapa
+
+Además de `--resume`, `--restart-from extract|adapt|audit|export` permite invalidar
+una etapa y sus dependencias sin repetir las anteriores. Requiere los mismos inputs
+y código, conserva los contadores y archiva los artefactos sustituidos en el checkpoint.
+`--analysis-only` guarda un análisis privado sin exigir contactos ni compilador.
+Consulte [estados y correcciones](review-changes.md).

@@ -101,129 +101,145 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(provider.request.call_count, 3)
             self.assertTrue((root / 'roles/test-role').exists())
 
-    def test_semantic_extraction_repair_is_preserved(self):
+    def test_extraction_repair_preserves_cv_and_only_recomputes_matches(self):
         with tempfile.TemporaryDirectory() as folder, ExitStack() as stack:
             root, args, settings, provider, _ = self.setup_run(folder, stack)
             _, job, adapted = fixture()
-            audit = {**AUDITED, 'supported': False, 'extraction_issues': ['Lost qualifier']}
+            audit = {**AUDITED, 'extraction_issues': [{'severity': 'material', 'reason': 'Lost qualifier', 'source_quote': 'Python'}]}
             corrected = copy.deepcopy(job)
             corrected['requirements'][0]['condition'] = 'For this role'
             provider.request.side_effect = [Result(job), Result(adapted), Result(audit),
-                                            Result(corrected), Result(adapted), Result(AUDITED)]
+                Result({'job': corrected, 'matches': adapted['matches']}), Result(AUDITED)]
             with patch('automation.pipeline.compile_pdf', side_effect=self.compile_ok):
                 pipeline.run(args, settings)
-            self.assertEqual(provider.request.call_count, 6)
-            report = json.loads((root / 'roles/test-role/validation.json').read_text())
-            self.assertEqual(report['extraction_repair_feedback'], ['Lost qualifier'])
+            self.assertEqual(provider.request.call_count, 5)
+            self.assertEqual(json.loads((root / 'roles/test-role/adaptation.json').read_text()), adapted)
+            self.assertEqual(provider.request.call_args_list[3].args[1]['previous_extraction'], job)
 
-    def test_extraction_regression_reports_final_findings_without_publishing(self):
+    def test_unresolved_extraction_keeps_private_analysis_and_review_pdf(self):
         with tempfile.TemporaryDirectory() as folder, ExitStack() as stack:
             root, args, settings, provider, _ = self.setup_run(folder, stack)
             _, job, adapted = fixture()
-            first = {**AUDITED, 'supported': False,
-                     'extraction_issues': ['Keep the shared three-year threshold']}
-            remaining = ['r06: System Engineering AND MBSE, not OR',
-                         'r07: Continuous improvement AND process management, not OR']
-            second = {**AUDITED, 'supported': False, 'extraction_issues': remaining}
-            corrected = copy.deepcopy(job)
-            corrected['requirements'][0]['condition'] = 'Shared threshold'
-            provider.request.side_effect = [Result(job), Result(adapted), Result(first),
-                                            Result(corrected), Result(adapted), Result(second)]
-            with patch('automation.pipeline.compile_pdf') as compile:
-                with self.assertRaises(ValueError) as caught:
-                    pipeline.run(args, settings)
-            message = str(caught.exception)
-            self.assertIn('Semantic extraction audit failed after correction', message)
-            for finding in remaining:
-                self.assertIn(finding, message)
-            self.assertNotIn(first['extraction_issues'][0], message)
-            self.assertEqual(provider.request.call_count, 6)
-            correction_input = provider.request.call_args_list[3].args[1]
-            self.assertEqual(correction_input['previous_extraction'], job)
-            self.assertEqual(correction_input['corrections_required'], first['extraction_issues'])
-            compile.assert_not_called()
+            audit = {**AUDITED, 'extraction_issues': [{'severity': 'material', 'reason': 'Lost qualifier', 'source_quote': 'Python'}]}
+            provider.request.side_effect = [Result(job), Result(adapted), Result(audit),
+                Result({'job': job, 'matches': adapted['matches']}), Result(audit)]
+            with patch('automation.pipeline.compile_pdf', side_effect=self.compile_ok):
+                result = pipeline.run(args, settings)
+            self.assertEqual(result['status'], 'requires_review')
+            self.assertTrue((root / '.private/runs/test-role/match.md').exists())
+            self.assertTrue((root / '.private/runs/test-role/cv.pdf').exists())
             self.assertFalse((root / 'roles/test-role').exists())
-            self.assertFalse((root / 'build/test-role/cv.pdf').exists())
 
-    def test_repair_audits_use_accepted_job_without_reopening_extraction(self):
+    def test_nonactionable_audit_is_review_not_proven_false(self):
         with tempfile.TemporaryDirectory() as folder, ExitStack() as stack:
             root, args, settings, provider, _ = self.setup_run(folder, stack)
             _, job, adapted = fixture()
-            first = {**AUDITED, 'supported': False, 'unsupported_claims': [{'path': 'summary', 'fragment': 'developer', 'reason': 'Scope unsupported', 'valid_evidence_ids': ['fact-a']}]}
-            second = {**AUDITED, 'supported': False, 'match_corrections': [
-                {'requirement_id': 'r01', 'status': 'transferable', 'rationale': 'Partial support'}]}
-            provider.request.side_effect = [Result(job), Result(adapted), Result(first), Result(adapted['summary']), Result(second), Result(AUDITED)]
+            provider.request.side_effect = [Result(job), Result(adapted), Result({**AUDITED, 'supported': False, 'issues': ['General concern']})]
             with patch('automation.pipeline.compile_pdf', side_effect=self.compile_ok):
-                pipeline.run(args, settings)
-            for call in provider.request.call_args_list[4:]:
-                self.assertEqual(call.args[1]['audit_scope'], 'adaptation')
-                self.assertNotIn('source_text', call.args[1])
-            report = json.loads((root / 'roles/test-role/validation.json').read_text())
-            self.assertEqual(len(report['repair_history']), 2)
-
-    def test_length_repairs_are_audited_on_every_adaptation_route(self):
-        for route in ('initial', 'validation_retry', 'extraction_retry'):
-            with self.subTest(route=route), tempfile.TemporaryDirectory() as folder, ExitStack() as stack:
-                root, args, settings, provider, _ = self.setup_run(folder, stack)
-                _, job, adapted = fixture()
-                oversized = copy.deepcopy(adapted)
-                oversized['summary']['text'] = 'Python ' * 66
-                outputs = [Result(job)]
-                if route == 'validation_retry':
-                    invalid = copy.deepcopy(adapted)
-                    invalid['matches'] = []
-                    outputs.append(Result(invalid))
-                elif route == 'extraction_retry':
-                    outputs += [Result(adapted), Result({**AUDITED, 'supported': False,
-                                                       'extraction_issues': ['Lost qualifier']})]
-                    corrected = copy.deepcopy(job)
-                    corrected['requirements'][0]['condition'] = 'For this role'
-                    outputs.append(Result(corrected))
-                outputs += [Result(oversized), Result(adapted['summary']), Result(AUDITED)]
-                provider.request.side_effect = outputs
-                with patch('automation.pipeline.compile_pdf', side_effect=self.compile_ok):
-                    pipeline.run(args, settings)
-                final_audit = provider.request.call_args.args[1]
-                self.assertEqual(final_audit['adaptation']['summary'], adapted['summary'])
-                self.assertTrue((root / 'roles/test-role').exists())
-                self.assertEqual(provider.request.call_count, len(outputs))
-
-    def test_length_budget_failure_does_not_regenerate_entire_draft(self):
-        with tempfile.TemporaryDirectory() as folder, ExitStack() as stack:
-            _, args, settings, provider, _ = self.setup_run(folder, stack)
-            _, job, adapted = fixture()
-            adapted['summary']['text'] = 'Python ' * 66
-            provider.request.side_effect = [Result(job), Result(adapted),
-                                            ValueError('LLM request budget exhausted')]
-            with patch('automation.pipeline.compile_pdf') as compile:
-                with self.assertRaisesRegex(ValueError, 'budget'):
-                    pipeline.run(args, settings)
+                result = pipeline.run(args, settings)
+            self.assertEqual(result['status'], 'requires_review')
+            self.assertEqual(result['review']['cv_factual_issues'], [])
+            self.assertTrue(result['review']['audit_errors'])
             self.assertEqual(provider.request.call_count, 3)
-            compile.assert_not_called()
 
-    def test_length_fallback_is_audited_before_compilation(self):
+    def test_gap_and_match_correction_do_not_block(self):
+        with tempfile.TemporaryDirectory() as folder, ExitStack() as stack:
+            root, args, settings, provider, _ = self.setup_run(folder, stack)
+            _, job, adapted = fixture()
+            audit = {**AUDITED, 'match_corrections': [{'requirement_id': 'r01', 'status': 'gap', 'rationale': 'No cumple el requisito.'}]}
+            provider.request.side_effect = [Result(job), Result(adapted), Result(audit)]
+            with patch('automation.pipeline.compile_pdf', side_effect=self.compile_ok):
+                result = pipeline.run(args, settings)
+            self.assertEqual(result['status'], 'ready')
+            self.assertIn('gap', (root / 'roles/test-role/match.md').read_text())
+            self.assertEqual(provider.request.call_count, 3)
+
+    def test_batch_repairs_two_fields_without_rebuilding_cv(self):
+        with tempfile.TemporaryDirectory() as folder, ExitStack() as stack:
+            root, args, settings, provider, _ = self.setup_run(folder, stack)
+            _, job, adapted = fixture()
+            findings = [{'path': path, 'fragment': 'developer', 'reason': 'Scope', 'valid_evidence_ids': ['fact-a']} for path in ('summary', 'skill:0')]
+            audit = {**AUDITED, 'supported': False, 'unsupported_claims': findings}
+            batch = {'claims': [{'path': path, 'claim': {'text': 'Developed Python tools.', 'evidence_ids': ['fact-a']}} for path in ('summary', 'skill:0')]}
+            provider.request.side_effect = [Result(job), Result(adapted), Result(audit), Result(batch), Result(AUDITED)]
+            with patch('automation.pipeline.compile_pdf', side_effect=self.compile_ok):
+                result = pipeline.run(args, settings)
+            self.assertEqual(result['status'], 'ready')
+            self.assertEqual(provider.request.call_count, 5)
+            self.assertEqual(len(provider.request.call_args_list[3].args[1]['fields']), 2)
+            self.assertEqual(provider.request.call_args.args[1]['audit_scope'], 'adaptation')
+
+    def test_length_repair_is_local_and_audited(self):
         with tempfile.TemporaryDirectory() as folder, ExitStack() as stack:
             root, args, settings, provider, _ = self.setup_run(folder, stack)
             _, job, adapted = fixture()
             oversized = copy.deepcopy(adapted)
-            oversized['summary']['text'] = 'Python ' * 66
-            provider.request.side_effect = [Result(job), Result(oversized),
-                Result(oversized['summary']), Result(oversized['summary']), Result(AUDITED)]
+            oversized['experience'][0]['bullets'][0]['text'] = 'Python ' * 33
+            batch = {'claims': [{'path': 'bullet:role-a:0', 'claim': adapted['experience'][0]['bullets'][0]}]}
+            provider.request.side_effect = [Result(job), Result(oversized), Result(batch), Result(AUDITED)]
             with patch('automation.pipeline.compile_pdf', side_effect=self.compile_ok):
                 pipeline.run(args, settings)
-            self.assertEqual(provider.request.call_args.args[1]['adaptation']['summary']['text'],
-                             'Developed Python tools. Used MATLAB.')
+            self.assertEqual(provider.request.call_args.args[1]['adaptation'], adapted)
+            self.assertEqual(provider.request.call_count, 4)
 
-    def test_repeated_rejection_stops_without_pdf(self):
+    def test_repeated_factual_rejection_ends_with_literal_evidence(self):
         with tempfile.TemporaryDirectory() as folder, ExitStack() as stack:
             root, args, settings, provider, _ = self.setup_run(folder, stack)
             _, job, adapted = fixture()
             rejected = {**AUDITED, 'supported': False, 'unsupported_claims': [{'path': 'summary', 'fragment': 'developer', 'reason': 'Scope unsupported', 'valid_evidence_ids': ['fact-a']}]}
-            provider.request.side_effect = [Result(job), Result(adapted), Result(rejected), Result(adapted['summary']), Result(rejected), Result(adapted['summary']), Result(rejected), Result(rejected)]
-            with patch('automation.pipeline.compile_pdf') as compile, self.assertRaisesRegex(ValueError, 'bounded'):
+            batch = {'claims': [{'path': 'summary', 'claim': adapted['summary']}]}
+            provider.request.side_effect = [Result(job), Result(adapted), Result(rejected), Result(batch), Result(rejected)]
+            with patch('automation.pipeline.compile_pdf', side_effect=self.compile_ok):
+                result = pipeline.run(args, settings)
+            final = json.loads((root / 'roles/test-role/adaptation.json').read_text())
+            self.assertEqual(final['summary']['text'], 'Developed Python tools. Used MATLAB.')
+            self.assertEqual(result['status'], 'ready')
+            self.assertEqual(provider.request.call_count, 5)
+
+    def test_missing_contacts_keeps_analysis(self):
+        with tempfile.TemporaryDirectory() as folder, ExitStack() as stack:
+            root, args, settings, provider, _ = self.setup_run(folder, stack)
+            with patch('automation.pipeline.load_contacts', side_effect=ValueError('Missing contacts')):
+                with self.assertRaisesRegex(ValueError, 'Missing contacts'):
+                    pipeline.run(args, settings)
+            self.assertTrue((root / '.private/runs/test-role/match.md').exists())
+            self.assertTrue((root / '.private/runs/test-role/adaptation.json').exists())
+            self.assertEqual(provider.request.call_count, 3)
+
+    def test_corporate_email_in_source_quote_is_redacted_only_for_publication(self):
+        with tempfile.TemporaryDirectory() as folder, ExitStack() as stack:
+            root, args, settings, provider, _ = self.setup_run(folder, stack)
+            _, job, adapted = fixture()
+            args.job_text.write_text('Python jobs@company.example ' * 20, encoding='utf-8')
+            job['requirements'][0]['source_quote'] = 'Python jobs@company.example'
+            provider.request.side_effect = [Result(job), Result(adapted), Result(AUDITED)]
+            with patch('automation.pipeline.compile_pdf', side_effect=self.compile_ok):
                 pipeline.run(args, settings)
+            self.assertIn('jobs@company.example', (root / '.private/runs/test-role/job.json').read_text())
+            self.assertNotIn('jobs@company.example', (root / 'roles/test-role/job.json').read_text())
+
+    def test_analysis_only_needs_neither_contacts_nor_compiler(self):
+        with tempfile.TemporaryDirectory() as folder, ExitStack() as stack:
+            root, args, settings, provider, _ = self.setup_run(folder, stack)
+            args.analysis_only = True
+            with patch('automation.pipeline.load_contacts', side_effect=ValueError('Missing contacts')), patch('automation.pipeline.compile_pdf') as compile:
+                result = pipeline.run(args, settings)
+            self.assertEqual(result['status'], 'ready')
+            self.assertFalse(result['exported'])
             compile.assert_not_called()
-            self.assertFalse((root / 'roles/test-role').exists())
+            self.assertTrue((root / '.private/runs/test-role/match.md').exists())
+
+    def test_compile_failure_marks_preserved_analysis_as_failed_export(self):
+        with tempfile.TemporaryDirectory() as folder, ExitStack() as stack:
+            root, args, settings, provider, _ = self.setup_run(folder, stack)
+            with patch('automation.pipeline.compile_pdf', side_effect=ValueError('PDF layout failed')):
+                with self.assertRaises(ValueError):
+                    pipeline.run(args, settings)
+            checkpoint = root / '.private/runs/test-role'
+            self.assertIn('Estado: render_failed', (checkpoint / 'match.md').read_text())
+            status = json.loads((checkpoint / 'status.json').read_text())
+            self.assertEqual(status['failed_stage'], 'export')
+            self.assertTrue(status['analysis_preserved'])
 
 
 class ValidationTests(unittest.TestCase):

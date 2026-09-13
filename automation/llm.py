@@ -47,6 +47,15 @@ class LLM:
             self.output_guard(result)
 
     def request(self, stage, data, schema):
+        try:
+            return self._request(stage, data, schema)
+        except ValueError as error:
+            if str(error) != 'LLM result does not match the stage schema.':
+                raise
+            return self._request(stage, {**data, 'format_correction':
+                'The previous response failed the supplied JSON schema. Return all required fields with correct types and no additional properties.'}, schema)
+
+    def _request(self, stage, data, schema):
         if stage not in ('extract', 'adapt', 'audit', 'repair'):
             raise ValueError('Unknown LLM stage.')
         prompt = (self.root / 'automation/prompts' / f'{stage}.txt').read_text(encoding='utf-8')

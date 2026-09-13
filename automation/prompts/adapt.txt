@@ -30,3 +30,6 @@ Do not include education/languages in generated sections: the renderer preserves
 No personal contacts, URL, email, phone, LaTeX, Markdown formatting or HTML in CV text.
 Include material gaps and editorial choices in decisions/questions; don't put the job's
 unsupported requirements into the CV. A matching score is not a hiring probability.
+
+Use not_applicable only when the requirement has an explicit condition and supplied evidence proves that condition does not apply; cite that evidence and explain why. Otherwise use unconfirmed. A gap is an acceptable analysis result and must not be disguised by CV prose.
+Decisions must explain concrete changes to the CV and material unsupported requirements left out. Questions identify genuinely missing evidence or availability, without requiring the candidate to meet every criterion.

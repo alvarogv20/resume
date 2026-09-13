@@ -22,7 +22,12 @@ def parse_args(argv=None):
     parser.add_argument('--max-pages', type=int, choices=[1, 2], default=2)
     parser.add_argument('--tectonic')
     parser.add_argument('--resume', action='store_true', help='Reuse private checkpoints for this slug.')
+    parser.add_argument('--restart-from', choices=['extract', 'adapt', 'audit', 'export'],
+                        help='With --resume, invalidate this stage and its dependent responses.')
+    parser.add_argument('--analysis-only', action='store_true', help='Save private analysis/draft without requiring a compiler or contacts.')
     args = parser.parse_args(argv)
+    if args.restart_from and not args.resume:
+        parser.error('--restart-from requires --resume')
     if not re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*', args.slug) or len(args.slug) > 90:
         parser.error('Use lowercase letters, digits and hyphens only (max 90).')
     return args, load_settings(vars(args))
