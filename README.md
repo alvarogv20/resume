@@ -34,6 +34,8 @@ contacts, evidence validation and optional Actions in a private automation repos
 - [Workflow and tools](docs/workflow.md)
 - [Provider configuration and API examples](docs/configuration.md)
 - [Resume and troubleshooting](docs/troubleshooting.md)
+- [Saved-offer regression corpus and real acceptance run](docs/offer-regression.md)
+- [Stage persistence and review corrections](docs/review-changes.md)
 
 Codex is the default. OpenAI Responses and explicitly configured Chat Completions
 compatible APIs share the same evidence checks. PowerShell and Actions accept provider
@@ -44,7 +46,8 @@ python -m pip install -r requirements.txt
 python -m automation.run --url "https://www.linkedin.com/jobs/view/JOB_ID/" --slug company-job-id --language en
 ```
 
-Configure `.private/contact.json` from `contact.example.json` first. Final PDFs
+Configure `.private/contact.json` from `contact.example.json` before PDF export.
+Use `--analysis-only` to save private analysis without contacts or Tectonic. Final PDFs
 include email, phone and LinkedIn but stay in the ignored `build/` directory.
 Public results contain only contact-free LaTeX and the evidence analysis. The
 pipeline never updates the master profile or submits applications automatically.

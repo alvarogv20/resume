@@ -49,6 +49,8 @@ def contact_tex(contacts):
 
 
 def render(profile, adapted, language):
+    from .localization import localized_profile
+    profile = localized_profile(profile, language)
     env = Environment(loader=FileSystemLoader(ROOT / 'templates'), undefined=StrictUndefined,
                       block_start_string='((*', block_end_string='*))',
                       variable_start_string='((=', variable_end_string='=))', autoescape=False)
@@ -62,7 +64,7 @@ def render(profile, adapted, language):
 
 def _contains_private_contact(text, contacts):
     normalized = re.sub(r'[^a-z0-9]', '', text.lower())
-    for value in contacts.values():
+    for value in (contacts or {}).values():
         token = re.sub(r'[^a-z0-9]', '', value.lower())
         if token in normalized:
             return True
@@ -79,3 +81,9 @@ def assert_no_public_contacts(text, contacts):
         raise ValueError('Private contact found in publishable output.')
     if re.search(r'[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}|linkedin\.com/in/', text, re.I):
         raise ValueError('A personal contact was found in publishable output.')
+
+
+def sanitize_public(text, contacts):
+    assert_no_private_contacts(text, contacts)
+    text = re.sub(r'[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}', '[contacto de tercero omitido]', text)
+    return re.sub(r'(?:https?://)?(?:www\.)?linkedin\.com/in/[^\s"<>]+', '[perfil de tercero omitido]', text, flags=re.I)

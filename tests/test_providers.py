@@ -94,10 +94,10 @@ class RetryTests(unittest.TestCase):
         for value in (ProviderError('Unauthorized'), Result({'bad': 'private text'})):
             with tempfile.TemporaryDirectory() as folder:
                 llm = self.make_llm(folder)
-                llm.backend.request = Mock(side_effect=[value])
+                llm.backend.request = Mock(side_effect=[value, value])
                 with self.assertRaises((ProviderError, ValueError)):
                     llm.request('audit', {}, AUDIT)
-                self.assertEqual(llm.backend.request.call_count, 1)
+                self.assertEqual(llm.backend.request.call_count, 1 if isinstance(value, ProviderError) else 2)
                 self.assertNotIn('private text', next(Path(folder).glob('*.json')).read_text())
 
     def test_budget_limits_transport_attempts(self):
@@ -141,3 +141,25 @@ class RetryTests(unittest.TestCase):
                 with RunState(folder, {'input': 'b'}, resume=True):
                     pass
             self.assertFalse((Path(folder) / 'active.lock').exists())
+
+
+class CodexDiagnosticsTests(unittest.TestCase):
+    def test_transport_error_is_retryable_and_details_stay_private(self):
+        import subprocess
+        from automation.providers.codex import CodexProvider
+        with tempfile.TemporaryDirectory() as folder, patch('automation.config.ROOT', Path(folder)):
+            provider = CodexProvider(None)
+            error = provider.failure(subprocess.CompletedProcess([], 1, stdout='', stderr='stream disconnected: private diagnostic detail'))
+            self.assertTrue(error.transient)
+            self.assertNotIn('private diagnostic detail', str(error))
+            saved = next((Path(folder) / '.private/provider-diagnostics').glob('*.json'))
+            self.assertIn('private diagnostic detail', saved.read_text(encoding='utf-8'))
+
+    def test_usage_limit_is_not_retried_blindly(self):
+        import subprocess
+        from automation.providers.codex import CodexProvider
+        with tempfile.TemporaryDirectory() as folder, patch('automation.config.ROOT', Path(folder)):
+            provider = CodexProvider(None)
+            error = provider.failure(subprocess.CompletedProcess([], 1, stdout='usage limit reached', stderr=''))
+            self.assertFalse(error.transient)
+            self.assertIn('usage limit', str(error))

@@ -4,6 +4,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+import uuid
 
 from .base import ProviderError, Result, usage_counts
 
@@ -15,6 +16,27 @@ class CodexProvider:
     def preflight(self):
         if not shutil.which(os.environ.get('CODEX_BIN', 'codex')):
             raise ValueError('Codex executable missing; set CODEX_BIN or install Codex CLI.')
+
+    def failure(self, run):
+        from ..config import ROOT
+        from ..state import atomic_json
+        # Raw provider messages remain private: public exceptions use categories.
+        folder = ROOT / '.private/provider-diagnostics'
+        diagnostic = folder / (uuid.uuid4().hex + '.json')
+        output = getattr(run, 'stdout', '') + '\n' + getattr(run, 'stderr', '')
+        atomic_json(diagnostic, {'returncode': run.returncode, 'output': output})
+        lowered = output.lower()
+        if 'usage limit' in lowered or 'usage_limit' in lowered or 'quota' in lowered:
+            return ProviderError('Codex usage limit reached; inspect private provider diagnostics and retry after reset.')
+        if 'rate limit' in lowered or 'rate_limit' in lowered:
+            return ProviderError('Codex rate limited the request; see private provider diagnostics.', transient=True, retry_after=10)
+        if any(x in lowered for x in ('connection', 'stream disconnected', 'timed out', '502', '503')):
+            return ProviderError('Codex transport failed; see private provider diagnostics.', transient=True)
+        if 'home directory' in lowered:
+            return ProviderError('Codex cannot access its home directory in this execution environment.')
+        if any(x in lowered for x in ('unauthorized', '401', 'login', 'authentication')):
+            return ProviderError('Codex authentication failed; check login and private provider diagnostics.')
+        return ProviderError('Codex failed; inspect .private/provider-diagnostics for model or local configuration errors.')
 
     def request(self, prompt, data, schema, timeout):
         with tempfile.TemporaryDirectory(prefix='cv-llm-') as folder:
@@ -38,7 +60,7 @@ class CodexProvider:
             except subprocess.TimeoutExpired:
                 raise ProviderError('Codex timed out; resume after checking local status.') from None
             if run.returncode or not (path / 'result.json').exists():
-                raise ProviderError('Codex failed; check login, model access and CODEX_BIN locally.')
+                raise self.failure(run)
             usage = {}
             for line in getattr(run, 'stdout', '').splitlines():
                 try:

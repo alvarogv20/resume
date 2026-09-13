@@ -3,6 +3,7 @@ import hashlib
 import json
 from pathlib import Path
 import uuid
+from datetime import datetime, timezone
 
 
 def fingerprint(value):
@@ -68,3 +69,31 @@ class RunState:
 
     def save(self, key, record):
         atomic_json(self.folder / 'cache' / (key + '.json'), record)
+
+    def stage(self, name, status, **details):
+        now = datetime.now(timezone.utc)
+        previous = self.manifest.setdefault('stages', {}).get(name, {})
+        started = now.isoformat() if status == 'running' else previous.get('started_at', now.isoformat())
+        self.manifest['stages'][name] = {'status': status, 'started_at': started,
+            'duration_seconds': round((now - datetime.fromisoformat(started)).total_seconds(), 3), **details}
+        atomic_json(self.folder / 'manifest.json', self.manifest)
+
+    def invalidate(self, stage):
+        order = ['extract', 'adapt', 'audit', 'repair', 'export']
+        affected = set(order[order.index(stage):])
+        for path in (self.folder / 'cache').glob('*.json'):
+            record = json.loads(path.read_text(encoding='utf-8'))
+            if record['metadata']['stage'] in affected:
+                path.unlink()
+        for name in affected:
+            self.manifest.setdefault('stages', {}).pop(name, None)
+        derived = {'extract': ['job.json', 'draft.json', 'adaptation.json', 'match.md', 'decisions.md'],
+                   'adapt': ['draft.json', 'adaptation.json', 'match.md', 'decisions.md'],
+                   'audit': ['adaptation.json', 'match.md', 'decisions.md'], 'export': []}
+        archive = self.folder / 'history' / uuid.uuid4().hex
+        for name in derived.get(stage, []) + ['cv.tex', 'cv.pdf', 'cv.log', 'cv.layout.json', 'validation.json', 'status.json']:
+            path = self.folder / name
+            if path.exists():
+                archive.mkdir(parents=True, exist_ok=True)
+                path.rename(archive / name)
+        atomic_json(self.folder / 'manifest.json', self.manifest)

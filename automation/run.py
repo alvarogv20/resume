@@ -5,12 +5,13 @@ from .pipeline import run
 
 def main(argv=None):
     args, settings = parse_args(argv)
-    run(args, settings)
+    report = run(args, settings)
+    return 0 if report['status'] == 'ready' else 2
 
 
 if __name__ == '__main__':
     try:
-        main()
+        raise SystemExit(main())
     except Exception as error:
         # Never expose raw model payloads, network bodies or configuration secrets.
         from .providers.base import ProviderError

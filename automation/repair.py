@@ -2,7 +2,7 @@
 import copy
 import itertools
 from jsonschema import ValidationError
-from .match import fact_index, validate_adaptation, validate_professional_field, WORD_LIMITS, WORD_TARGETS
+from .match import fact_index, allowed_facts, validate_field, validate_adaptation, validate_professional_field, WORD_LIMITS, WORD_TARGETS
 from .schemas import CLAIM
 
 
@@ -18,28 +18,21 @@ def claim_at(adapted, path):
     raise ValueError('Unknown claim path from audit.')
 
 
-def allowed_facts(profile, path):
-    if path.startswith('bullet:'):
-        role = next(r for r in profile['experience'] if r['id'] == path.split(':')[1])
-        return {f['id']: f['text'] for f in role['facts']}
-    if path.startswith('skill:'):
-        return {f['id']: f['text'] for f in profile['skills']}
-    return fact_index(profile)
-
-
-def fallback(profile, path, preferred, limit):
+def fallback(profile, path, preferred, limit, language='en'):
+    from .localization import localized_profile
+    profile = localized_profile(profile, language)
     experience = {f['id']: f['text'] for r in profile['experience'] for f in r['facts']}
     skills = {f['id']: f['text'] for f in profile['skills']}
     if path == 'headline':
         candidates = {r['id']: r['title'] for r in profile['experience']}
     elif path == 'summary':
-        candidates = {**experience, **skills}
+        candidates = experience or skills
     else:
         candidates = allowed_facts(profile, path)
     # Prefer retained evidence within each professional category, never education.
     ids = sorted(candidates, key=lambda i: (i not in experience if path == 'summary' else False,
                                            i not in preferred))
-    sizes = (3, 2) if path == 'summary' else (1,)
+    sizes = (3, 2, 1) if path == 'summary' else (1,)
     for size in sizes:
         for selected in itertools.combinations(ids, size):
             text = ' '.join(candidates[i] for i in selected)
@@ -97,14 +90,14 @@ def repair(profile, job, adapted, audit, llm=None, attempts=None, language='en')
             try:
                 if set(regenerated['evidence_ids']) - allowed.keys():
                     raise ValueError('Repair cites evidence outside the field scope.')
-                validate_adaptation(profile, job, candidate)
+                validate_field(profile, path, regenerated, limit)
             except (ValueError, ValidationError) as exc:
                 error = str(exc)
                 continue
             claim.update(regenerated)
             break
         else:
-            claim.update(fallback(profile, path, finding['valid_evidence_ids'], limit))
+            claim.update(fallback(profile, path, finding['valid_evidence_ids'], limit, language))
     result['decisions'].append('Campos rechazados reparados con evidencia; fallback específico tras agotar los intentos generativos.')
     validate_adaptation(profile, job, result)
     return result
@@ -147,6 +140,6 @@ def repair_lengths(profile, adapted, llm, attempts=None, language='en'):
             result[field] = regenerated
             break
         else:
-            result[field] = fallback(profile, field, result[field]['evidence_ids'], limit)
+            result[field] = fallback(profile, field, result[field]['evidence_ids'], limit, language)
             validate_professional_field(profile, field, result[field])
     return result

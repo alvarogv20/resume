@@ -1,5 +1,6 @@
 """Validate evidence links independently of the model's self-assessment."""
 import re
+from decimal import Decimal
 from jsonschema import validate
 from .schemas import ADAPTATION, JOB, CLAIM
 
@@ -55,10 +56,30 @@ def validate_claim(claim, facts):
         raise ValueError('CV claim missing known evidence.')
     if re.search(r'@|https?://|linkedin\.com|[<>\\]', claim['text'], re.I):
         raise ValueError('CV claim contains contacts, markup or executable text.')
-    numbers = set(re.findall(r'\d+(?:[.,]\d+)?', claim['text']))
+    numbers = numeric_values(claim['text'])
     evidence = ' '.join(facts[i] for i in claim['evidence_ids'])
-    if numbers - set(re.findall(r'\d+(?:[.,]\d+)?', evidence)):
+    if numbers - numeric_values(evidence):
         raise ValueError('CV claim contains unsupported numeric facts.')
+
+
+def numeric_values(text):
+    return {Decimal(x.replace(',', '.')) for x in re.findall(r'\d+(?:[.,]\d+)?', text)}
+
+
+def allowed_facts(profile, path):
+    if path.startswith('bullet:'):
+        role = next(r for r in profile['experience'] if r['id'] == path.split(':')[1])
+        return {f['id']: f['text'] for f in role['facts']}
+    return fact_index(profile)
+
+
+def validate_field(profile, path, claim, limit=None):
+    validate_claim(claim, allowed_facts(profile, path))
+    if path in WORD_LIMITS:
+        validate_professional_field(profile, path, claim)
+    maximum = limit if limit is not None else WORD_LIMITS.get(path, 32 if path.startswith('bullet:') else 80)
+    if len(claim['text'].split()) > maximum:
+        raise ValueError(f'{path} exceeds {maximum} words.')
 
 
 def validate_professional_field(profile, field, claim):
@@ -70,11 +91,13 @@ def validate_professional_field(profile, field, claim):
     professional = {f['id'] for r in profile['experience'] for f in r['facts']}
     professional.update(f['id'] for f in profile['skills'])
     titles = {r['id']: r['title'] for r in profile['experience']}
+    from .localization import ES
     administrative = {f['text'].strip().casefold() for group in ('education', 'languages') for f in profile[group]}
     administrative.update(facts[r['id']].strip().casefold() for r in profile['experience'])
     text = claim['text'].strip()
     title_only = field == 'headline' and any(
-        text.casefold() == titles.get(i, '').casefold() for i in claim['evidence_ids'])
+        text.casefold() in (titles.get(i, '').casefold(), ES.get(titles.get(i, ''), '').casefold())
+        for i in claim['evidence_ids'])
     if (not (set(claim['evidence_ids']) & professional or title_only)
             or text.casefold() in administrative or not re.search(r'[^\W\d_]', text)):
         raise ValueError(f'{field} must describe professional experience or competencies, not education, language, dates or administration.')
@@ -99,11 +122,10 @@ def validate_adaptation(profile, job, adapted):
             raise ValueError('Unknown match evidence.')
         if match['status'] in ('direct', 'transferable') and not match['evidence_ids']:
             raise ValueError('Positive match without evidence.')
-        if match['status'] == 'direct' and re.search(
-                r'not (?:evidenced|documented|explicit|fully)|no (?:evidence|explicit evidence)|'
-                r'not supported|sin evidencia|no (?:acreditad|documentad)|no se (?:acredita|documenta)|'
-                r'parcial|partially', match['rationale'], re.I):
-            raise ValueError('A direct match rationale admits missing or partial evidence; use transferable/unconfirmed.')
+        if match['status'] == 'not_applicable':
+            requirement = next(r for r in job['requirements'] if r['id'] == match['requirement_id'])
+            if not requirement['condition'].strip() or not match['rationale'].strip() or not match['evidence_ids']:
+                raise ValueError('Not applicable needs a condition, justification and evidence.')
     claims = [adapted['headline'], adapted['summary'], *adapted['skills']]
     for role, master in zip(adapted['experience'], profile['experience']):
         if not 1 <= len(role['bullets']) <= 4:
