@@ -1,10 +1,10 @@
-version: 1
-reviewed_on: '2026-09-10'
-source: base.tex at 97e5059
-review_note: Current profile accepted as master by owner; editable through reviewed commits.
+version: 2
+reviewed_on: '2026-09-13'
+source: Resume_GW.pdf + owner-provided profile updates
+review_note: Updated master profile incorporating the latest CV version and owner-provided responsibilities and skills.
 name: Álvaro Garrido
 location: Madrid, Spain
-headline: Aeronautical Engineer | Aeroelasticity & Loads
+headline: Senior Project Manager | Aeroelasticity & Loads Expert
 experience:
   - id: solute-lead
     title: Technical Area Responsible
@@ -13,21 +13,35 @@ experience:
     dates: January 2025 - Present
     facts:
       - id: lead-team
-        text: Manage a 10-member Aeroelasticity & Controls team, organizing workloads and supervising R&D objectives.
-      - id: lead-customers
-        text: Coordinate customer communications and support commercial requirements.
+        text: Manage and organize tasks for a 10-member Aeroelasticity & Controls team, including direct R&D supervision of team objectives to ensure technical alignment with industry advancements.
+      - id: lead-key-account
+        text: Act as Key Account Manager for a client generating over EUR 1M/year in business across more than four engineering teams.
+      - id: lead-performance
+        text: Review account and team performance through weekly reviews and ad-hoc KPIs, coordinating assignments and resource needs.
+      - id: lead-hiring-contracts
+        text: Manage new hirings, contract renewals and commercial negotiations linked to the key account and engineering delivery needs.
+      - id: lead-technical-poc
+        text: Serve as technical point of contact for aeroelasticity and controls projects for clients across the wind, civil and aerospace industries.
       - id: lead-proposals
-        text: Prepare technical and commercial proposals for business development and client portfolio diversification.
+        text: Prepare technical and commercial offers supporting business development and diversification of the client portfolio.
+      - id: lead-market
+        text: Lead company participation in international renewable energy fairs to support growth and market presence.
   - id: solute-pm
     title: Senior Project Engineer & Project Manager
     company: Solute
     location: Madrid, Spain
     dates: June 2023 - January 2025
     facts:
+      - id: pm-lifecycle
+        text: Participated in wind turbine life-cycle optimization projects aimed at improving performance, extending asset value and increasing market competitiveness.
+      - id: pm-software
+        text: Developed software and automation tools to reduce execution time across a diverse range of engineering tasks.
+      - id: pm-mla
+        text: Performed Mechanical Loads Assessments for a diverse range of sites and markets in accordance with international and regional standards and OEM-specific design and validation guidelines.
       - id: pm-uav
         text: Led development of a rotating-wing UAV for wind turbine inspection, covering technical requirements, system architecture, certification processes and testing.
       - id: pm-wind
-        text: Provided technical and functional coordination for wind turbine projects and engineering teams, including life extension and structural integrity.
+        text: Provided technical and functional coordination for wind turbine projects and engineering teams, including life extension and structural integrity activities.
       - id: pm-certification
         text: Managed load certification processes against IEC/DNV standards for international projects.
   - id: solute-loads
@@ -36,23 +50,27 @@ experience:
     location: Madrid, Spain
     dates: December 2021 - June 2023
     facts:
-      - id: loads-python
-        text: Developed Python and MATLAB scripts to reduce load calculation cycle times and support wind turbine design optimization.
-      - id: loads-methods
-        text: Developed engineering methodologies for Dynamic Wake Meandering and floating wind turbine loads.
       - id: loads-simulation
         text: Performed aeroelastic simulations and dynamic load analyses for GE Renewables offshore turbines, covering bottom-fixed and floating configurations.
+      - id: loads-methods
+        text: Developed engineering methodologies for Dynamic Wake Meandering and floating wind turbine loads.
+      - id: loads-python
+        text: Developed Python and MATLAB scripts to reduce load calculation cycle times and support wind turbine design optimization.
       - id: loads-sites
         text: Conducted site-specific assessments and control tuning for wind turbine projects.
 skills:
   - id: skills-tools
-    text: Python, MATLAB, Git; engineering methodology development; simulation workflow optimization.
+    text: Python, MATLAB, Git; software development, engineering methodology development and simulation workflow optimization.
   - id: skills-engineering
-    text: Aeroelasticity, structural dynamics, Bladed, HAWC2; CFD with Fluent; structural tools with NX; CAD with CATIA V5.
-  - id: skills-coordination
-    text: Team leadership, R&D supervision, customer coordination, technical requirements, system architecture, IEC/DNV load certification.
+    text: Aeroelasticity, mechanical loads assessment, structural dynamics, Bladed, HAWC2; offshore and floating wind; CFD with Fluent; structural tools with NX; CAD with CATIA V5.
+  - id: skills-certification
+    text: International and regional wind turbine standards, IEC/DNV load certification, OEM-specific design and validation guidelines, site-specific load assessment and structural integrity.
+  - id: skills-leadership
+    text: Team leadership, R&D supervision, cross-functional engineering coordination, technical point-of-contact responsibilities and multi-team resource planning.
+  - id: skills-commercial
+    text: Key account management, performance and KPI reviews, client relationship management, technical and commercial proposals, contract renewals, negotiations and hiring coordination.
   - id: skills-projects
-    text: MS Project, Jira, Smartsheet.
+    text: Project management, life-cycle optimization, MS Project, Jira, Smartsheet.
 education:
   - id: edu-master
     text: Master's Degree in Aeronautical Engineering | 2019 - 2021 | Universidad Politécnica de Madrid and University of Liège.

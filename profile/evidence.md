@@ -16,3 +16,4 @@ Los documentos privados que acrediten un hecho deben permanecer fuera del reposi
 
 - v1, 2026-09-10: migración de todos los hechos del CV general existente; aceptación
   del contenido actual como maestro por el propietario. No es una verificación externa.
+- v2, 2026-09-13: Se adicionan ciertos elementos extra relacionados con la gestión de cuentas.
